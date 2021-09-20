@@ -65,17 +65,22 @@
 
  }
 
- //rect2.attr('label/text', 'World!');
+ /**
+  * *******************************************
+  *                 BARRA DE PROPIEDADES      *
+  * *******************************************
+  * 
+  */
 
 //genero sub Modulo del modulo seleccionado
  function attributesTool(elementView){
     var currentElement = elementView.model
-    // TODO: refactor. Pasar un archivo html para cada pincel para desacoplar la funcion de las propiedades del pincel y el html
+    // TODO: refactorear este choclo por el amor dios. Pasar html de cada propiedad a un archivo separada cargarlo con una funcion y hacerle el binding del evento
     const elementMarker = '<a id="jmp-'+currentElement.id+'" class="list-group-item list-group-item-action" href="#'+ currentElement.id +'"> default </a>'
-
+    // TODO: arreglar id y class, hay algunos '+ currentElement.id+' que no hacen falta
     const rename = '<h5>default</h5>' +
     '<div class="input-group">'+
-        '<input type="text" name="quant[6]-'+currentElement.id+'" class="form-control input-name" value="default" min="0" max="10">'+
+        '<input type="text" name="quant[6]-'+currentElement.id+'" class="form-control input-name-'+ currentElement.id+'" value="default" min="0" max="10">'+
     '</div>';
 
     const inputs = '<h5>InPort</h5>' +
@@ -85,7 +90,7 @@
                 '<span class="glyphicon glyphicon-minus"></span>'+
             '</button>'+
         '</span>'+
-        '<input type="text" name="quant[1]-'+currentElement.id+'" class="form-control input-number" value="0" min="0" max="10">'+
+        '<input type="text" name="quant[1]-'+currentElement.id+'" class="form-control input-number'+ currentElement.id+'" value="0" min="0" max="10">'+
         '<span class="input-group-btn">'+
             '<button type="button" id="in" class="btn btn-default btn-number-'+currentElement.id+'" data-type="plus" data-field="quant[1]">'+
                 '<span class="glyphicon glyphicon-plus"></span>'+
@@ -100,7 +105,7 @@
                 '<span class="glyphicon glyphicon-minus"></span>'+
             '</button>'+
         '</span>'+
-        '<input type="text" name="quant[2]-'+currentElement.id+'" class="form-control input-number" value="0" min="0" max="10">'+
+        '<input type="text" name="quant[2]-'+currentElement.id+'" class="form-control input-number-'+ currentElement.id+'" value="0" min="0" max="10">'+
         '<span class="input-group-btn">'+
             '<button type="button" id="out" class="btn btn-default btn-number-'+currentElement.id+'" data-type="plus" data-field="quant[2]">'+
                 '<span class="glyphicon glyphicon-plus"></span>'+
@@ -119,7 +124,7 @@
                 '<span class="glyphicon glyphicon-minus"></span>'+
             '</button>'+
         '</span>'+
-        '<input type="text" name="quant[3]-'+currentElement.id+'" class="form-control resize" value='+width+' min="1" max ="1000">'+
+        '<input type="text" name="quant[3]-'+currentElement.id+'" class="form-control resize-'+currentElement.id+'" value='+width+' min="1" max ="1000">'+
         '<span class="input-group-btn">'+
             '<button type="button" id="out" class="btn btn-default btn-number-'+currentElement.id+'" data-type="plus" data-field="quant[3]">'+
                 '<span class="glyphicon glyphicon-plus"></span>'+
@@ -132,7 +137,7 @@
                 '<span class="glyphicon glyphicon-minus"></span>'+
             '</button>'+
         '</span>'+
-        '<input type="text" name="quant[4]-'+currentElement.id+'" class="form-control resize" value="'+height+'" min="1" max="1000">'+
+        '<input type="text" name="quant[4]-'+currentElement.id+'" class="form-control resize-'+currentElement.id+'" value="'+height+'" min="1" max="1000">'+
         '<span class="input-group-btn">'+
             '<button type="button"  class="btn btn-default btn-number-'+currentElement.id+'" data-type="plus" data-field="quant[4]">'+
                 '<span class="glyphicon glyphicon-plus"></span>'+
@@ -142,7 +147,6 @@
 
     let propertiesElement = '<div class= "border-bottom" id="'+currentElement.id+'" style="overflow-y: scroll; ; position:relative;" >' + rename + inputs + outputs + resize + '</div>' ;
 
-  //funfact: insertAdjacentHTML es el mejor optimizado para concatenar html
     document.getElementById('shape-content').insertAdjacentHTML('beforeend', propertiesElement);
     document.getElementById('list-shape').insertAdjacentHTML('beforeend', elementMarker);
 
@@ -156,7 +160,7 @@
         let updatedSize = currentElement.get('size');
         let updatedWidth = updatedSize.width;
         let updatedHeight = updatedSize.height;
-        console.log(updatedSize)
+        console.log(currentElement.id)
 
     
         if(!isNaN(currentVal)){
@@ -208,7 +212,7 @@
       });
     
     
-     $('.input-number').change(function() {
+     $('.input-number-'+currentElement.id).change(function() {
         
         let minValue =  parseInt($(this).attr('min'));
         let maxValue =  parseInt($(this).attr('max'));
@@ -235,7 +239,8 @@
         e.preventDefault();  
     });
 
-    $(".resize").keypress(function (e) {
+    $(".resize-"+ currentElement.id).keypress(function (e) {
+        console.log(currentElement.id)
         let fieldName = this.getAttribute('name');
 
 
@@ -269,8 +274,8 @@
     });
 
 
-    $(".input-name").keypress(function (e) {
-
+    $(".input-name-"+currentElement.id).keypress(function (e) {
+        console.log(currentElement.id)
        //backspace, delete, tab, escape, enter and .
        if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 190]) !== -1 ||
        //Ctrl+A
@@ -392,7 +397,7 @@ const saveGraph = (paper) => {
 };
 
 const load = (paper) =>{
-    //totalmente inseguro pero bue, corregir depsues
+    //totalmente inseguro y mal hecho pero bue, corregir depsues
     let graph = paper.model;
     const loadInput = '<input type="file" id="files" name="file" />'
     document.getElementById('button-tool').insertAdjacentHTML('beforeend', loadInput);
@@ -411,10 +416,6 @@ const load = (paper) =>{
         }
         reader.readAsText(e.target.files[0]);
     
-
-        /*graph.fromJSON(reader.readAsText(e.target.files[0]));
-        graph.get('graphCustomProperty'); // true
-        graph.get('graphExportTime');*/
         
         
     });
@@ -422,17 +423,6 @@ const load = (paper) =>{
 }
 
 
-const getCellId = (Eltarget) => {
-    console.log(Eltarget);
-    if(/^j_/.test(Eltarget.id)){
-        return Eltarget.getAttribute('model-id');
-    }else{
-
-        let parent = Eltarget.parentElement;
-        return getCellId(parent);
-    }
-    
-};
 /**
  * ****************************************************************
  *  EVENT HANDLING DE LOS DIFERENTES PARTES DEL GRAFO DEL EDITOR  *
@@ -445,7 +435,7 @@ const Brushes = (map, button, args) => {
     console.log(button);
     return map[button](...args);  };
 
-
+//aca se define el mapeo entre el nombre de la herramient y la funcion correspondiente
 const setBrush = (button, args) =>{
     
     return Brushes({'default':drawCoupled, 'place': drawCoupled, 'atomic': drawAtomic, 'save': saveGraph, 'load': load},button,args);
@@ -465,6 +455,19 @@ const special = (count,paper, brushType) =>{
 };
 
 //interaccion entre dos elementos con herramienta seleccionada
+
+//no tocar: funcion auxtiliar
+const getCellId = (Eltarget) => {
+    console.log(Eltarget);
+    if(/^j_/.test(Eltarget.id)){
+        return Eltarget.getAttribute('model-id');
+    }else{
+
+        let parent = Eltarget.parentElement;
+        return getCellId(parent);
+    }
+    
+};
 
 const interaction = (count, paper, brushType, cellsArray =[]) =>{
 
@@ -497,7 +500,7 @@ const interaction = (count, paper, brushType, cellsArray =[]) =>{
 };
 
 
-//render del elemento seleccionado de la red de petri al cliquear sobre el papel
+//render del elemento seleccionado al cliquear sobre el papel
 
 const render = ( count, paper, brushType,oneClickTimer = 0) =>{
     
@@ -545,7 +548,7 @@ const render = ( count, paper, brushType,oneClickTimer = 0) =>{
  */
 
 
-
+//definir herramienta en btn-group con name = NombreDeHerramienta/tipo(un numero)
 const toolType = (paper,type) => {
     const types = {'0': render, '1': interaction, '2': special};
     const context = type.split(/([0-9]+)/);
