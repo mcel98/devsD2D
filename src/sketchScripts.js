@@ -1,10 +1,8 @@
  
  //import DOMPurify from 'dompurify'
- 
  function createWorkArea(){
     var graph = new joint.dia.Graph;
     graph.set('graphCustomProperty', true);
-    graph.set('graphExportTime', Date.now());
 
     var paper = new joint.dia.Paper({
         el: document.getElementById('WorkArea'),
@@ -360,7 +358,7 @@ const drawCoupled = (event, paper) => {
 const drawAtomic = (event, paper) => {
 
     if( 'svg' == event.target.tagName){
-        let x = event.clientX - WorkArea.offsetLeft
+        let x = event.clientX - WorkArea.offsetLeft;
         let y = event.clientY - WorkArea.offsetTop;
 
         var devs = joint.shapes.devs;
@@ -377,6 +375,51 @@ const drawAtomic = (event, paper) => {
     }
         
 };
+
+const saveGraph = (paper) => {
+
+    graph = paper.model;
+    graph.set('graphExportTime', Date.now());
+    let devsModel = graph.toJSON();
+    let saveFile = JSON.stringify(devsModel);
+    console.log(saveFile);
+    var a = document.createElement('a');
+    console.log(a);
+    a.setAttribute('href', 'data:text/plain;charset=utf-8,'+encodeURIComponent(saveFile));
+    a.setAttribute('download', 'graph');
+    a.click();
+
+};
+
+const load = (paper) =>{
+    //totalmente inseguro pero bue, corregir depsues
+    let graph = paper.model;
+    const loadInput = '<input type="file" id="files" name="file" />'
+    document.getElementById('button-tool').insertAdjacentHTML('beforeend', loadInput);
+
+    $('input[name=file]').change(function(e) {
+        console.log(e.target.files[0]);
+
+        var reader = new FileReader();
+        reader.onload = reader.onload = function(){
+            var text = reader.result;
+            var model = JSON.parse(text);
+            graph.fromJSON(model);
+            graph.get('graphCustomProperty'); // true
+            graph.get('graphExportTime')
+
+        }
+        reader.readAsText(e.target.files[0]);
+    
+
+        /*graph.fromJSON(reader.readAsText(e.target.files[0]));
+        graph.get('graphCustomProperty'); // true
+        graph.get('graphExportTime');*/
+        
+        
+    });
+ 
+}
 
 
 const getCellId = (Eltarget) => {
@@ -398,16 +441,28 @@ const getCellId = (Eltarget) => {
 
 
 // todo: error handling -> mantener brush actual
-const Brushes = (map, button, args) => {return map[button](...args);  };
+const Brushes = (map, button, args) => {
+    console.log(button);
+    return map[button](...args);  };
 
 
 const setBrush = (button, args) =>{
     
-    return Brushes({'default':drawCoupled, 'place': drawCoupled, 'atomic': drawAtomic},button,args);
+    return Brushes({'default':drawCoupled, 'place': drawCoupled, 'atomic': drawAtomic, 'save': saveGraph, 'load': load},button,args);
 
 }
 
 const WorkArea = document.getElementById('WorkArea');
+
+// botones especiales
+
+const special = (count,paper, brushType) =>{
+    
+    console.log(brushType);
+    setBrush(brushType,[paper]);
+        
+    return;
+};
 
 //interaccion entre dos elementos con herramienta seleccionada
 
@@ -492,7 +547,7 @@ const render = ( count, paper, brushType,oneClickTimer = 0) =>{
 
 
 const toolType = (paper,type) => {
-    const types = {'0': render, '1': interaction};
+    const types = {'0': render, '1': interaction, '2': special};
     const context = type.split(/([0-9]+)/);
     console.log(context);
     types[context[1]](0,paper,context[0]);

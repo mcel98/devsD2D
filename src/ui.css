@@ -1,0 +1,17 @@
+#popUpDiv {
+    position:fixed;
+    top: 50%;
+    left: 50%;
+    background-color:#eeeeee;
+    border:5px solid #68ad0e;
+    width:300px;
+    height:130px;
+    margin-left:-150px;
+    margin-top:-65px;
+    -moz-border-radius: 16px;
+    -webkit-border-radius: 16px;
+    border-radius: 16px;
+    box-shadow: 12px 0 15px -4px #000000, -12px 0 15px -4px#000000;
+    -moz-box-shadow: 12px 0 15px -4px #000000, -12px 0 15px -4px#000000;
+    -webkit-box-shadow: 12px 0 15px -4px #000000, -12px 0 15px -4px#000000;
+    z-index: 9002; /*above nine thousand*/}
