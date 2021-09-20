@@ -78,7 +78,7 @@
     // TODO: refactorear este choclo por el amor dios. Pasar html de cada propiedad a un archivo separada cargarlo con una funcion y hacerle el binding del evento
     const elementMarker = '<a id="jmp-'+currentElement.id+'" class="list-group-item list-group-item-action" href="#'+ currentElement.id +'"> default </a>'
     // TODO: arreglar id y class, hay algunos '+ currentElement.id+' que no hacen falta
-    const rename = '<h5>default</h5>' +
+    const rename = '<h5>name</h5>' +
     '<div class="input-group">'+
         '<input type="text" name="quant[6]-'+currentElement.id+'" class="form-control input-name-'+ currentElement.id+'" value="default" min="0" max="10">'+
     '</div>';
