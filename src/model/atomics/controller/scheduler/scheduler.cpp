@@ -93,15 +93,8 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 	
 		this->message_identifier = msg.senderModelId();
 				
-		Real outcome = packet[1];
-		
 		this->number_of_retransmission = packet[2];
-		
-		if(outcome == Real(0)){
 
-			this->update = true; 
-			this->delivered[msg.senderModelId()]++;
-		}
 		this->relay_pdr[msg.senderModelId()] += static_cast<float>(packet[0]) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
 		
 		holdIn( AtomicState::active, VTime::Zero );
@@ -126,10 +119,15 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 	}else{
 
-		for(int i =0; i < this->relayIn.size(); i++){
-				outPort = (*cursor)->modelId() == this->message_identifier?i:outPort;
+		this->message_identifier = msg.senderModelId();
 
-			}
+		Real outcome = packet[1];
+
+		if(outcome == Real(0)){
+
+			this->update = true; 
+			this->delivered[msg.senderModelId()]++;
+		}
 
 
 	}

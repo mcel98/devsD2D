@@ -174,12 +174,12 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 }
 
 float &transmitter::getPDR(float channel_gain,float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
-	float pdr = 0.0;
-	pdr = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
+	float SINR = 0.0;
+	SINR = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
 
-	float PDR = 0.0;
+	float pb = 0.0;
 	for(int i =0; i < packet_size / packet_split; i++){
-		PDR += std::pow((1 - pdr), packet_split);
+		PDR += 0.5 std::pow((1 - pb), packet_split);
 	}
 
 	return PDR;
