@@ -68,7 +68,6 @@ class scheduler: public Atomic {
 		std::priority_queue<int>  priority;
 
 
-		bool update;
 		int maxRetransmission;
 		int message_identifier;
 

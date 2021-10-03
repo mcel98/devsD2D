@@ -63,8 +63,7 @@ Model &scheduler::initFunction()
  	// this->sigma = VTime::Inf; // stays in active state until an external event occurs;
  	this->sigma    = VTime::Inf; // force an internal transition in t=0;
 
- 	// TODO: add init code here. (setting first state, etc)
-	this->update = true;
+ 	// TODO: add init code here. (setting first state, etc
 	this->frame = -1;
 	this->message_identifier = 0;
 
@@ -93,9 +92,7 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 	
 		this->message_identifier = msg.senderModelId();
 				
-		this->number_of_retransmission = packet[2];
-
-		this->relay_pdr[msg.senderModelId()] += static_cast<float>(packet[0]) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
+		this->number_of_retransmission = packet[2];		
 		
 		holdIn( AtomicState::active, VTime::Zero );
 			
@@ -103,7 +100,6 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 		Real val = msg.value();
 		int identifier = msg.senderModelId();
-
 		
 		Real cycle = Real::from_value(val.value());
 
@@ -124,10 +120,10 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		Real outcome = packet[1];
 
 		if(outcome == Real(0)){
-
-			this->update = true; 
 			this->delivered[msg.senderModelId()]++;
 		}
+
+		this->relay_pdr[msg.senderModelId()] += static_cast<float>(packet[0]) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
 
 
 	}
@@ -168,26 +164,25 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 	// sendOutput( msg.time(), out, 1) ;
 	// value could be a tuple with different number of elements: 
 	// Tuple<Real> out_value{Real(value), 0, 1};
-	if(!update ){
-		if(Real(this->maxRetransmission) >= this->retransmission){
-			int outPort = -1;
-			for(int i =0; i < this->relayOut.size(); i++){
-				InfluenceList relays = relayOut[i].influences()
-				InfluenceList::iterator cursor;
-				for( cursor = relays.begin() ;cursor != relays.end() && (*cursor)->modelId() != this->message_identifier; cursor++ ) ;
-				outPort = (*cursor)->modelId() == this->message_identifier?i:outPort;
-
-			}
-
-			sendOutput(msg.time(),relayOut[outPort] , this->retransmission);
-			
-		}else{
-
-			sendOutput(msg.time(),trow, this->retransmission);
+	
+	if(Real(this->maxRetransmission) >= this->number_of_retransmission){
+		int outPort = -1;
+		for(int i =0; i < this->relayOut.size(); i++){
+			InfluenceList relays = relayOut[i].influences()
+			InfluenceList::iterator cursor;
+			for( cursor = relays.begin() ;cursor != relays.end() && (*cursor)->modelId() != this->message_identifier; cursor++ ) ;
+			outPort = (*cursor)->modelId() == this->message_identifier?i:outPort;
 
 		}
 
+		sendOutput(msg.time(),relayOut[outPort] , this->number_of_retransmission);
+			
+	}else{
+
+		sendOutput(msg.time(),trow, this->number_of_retransmission);
 	}
+
+	
 	
 	
 	
