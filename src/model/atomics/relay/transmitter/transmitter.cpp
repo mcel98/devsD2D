@@ -155,7 +155,7 @@ Model &transmitter::internalFunction( const InternalMessage &msg )
 Model &transmitter::outputFunction( const CollectMessage &msg )
 {
 
-    float pdr = getPDR(this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
+    float pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
 
 	double choice = this->dist(rnd);
 	if(choice <= pdr){
@@ -173,9 +173,16 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 
 }
 
-float &transmitter::getPDR(float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
+float &transmitter::getPDR(float channel_gain,float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
 	float pdr = 0.0;
-	return pdr;
+	pdr = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
+
+	float PDR = 0.0;
+	for(int i =0; i < packet_size / packet_split; i++){
+		PDR += std::pow((1 - pdr), packet_split);
+	}
+
+	return PDR;
 }
 
 transmitter::~transmitter()
