@@ -177,9 +177,9 @@ float &transmitter::getPDR(float channel_gain,float interference,float noise,flo
 	float SINR = 0.0;
 	SINR = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
 
-	float pb = 0.0;
+	float pb = 0.5 * std::erfc(std::sqrt(SINR)/std::sqrt(2));
 	for(int i =0; i < packet_size / packet_split; i++){
-		PDR += 0.5 std::pow((1 - pb), packet_split);
+		PDR += std::pow((1 - pb), packet_split);
 	}
 
 	return PDR;
