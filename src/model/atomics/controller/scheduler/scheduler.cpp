@@ -103,14 +103,15 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		Real cycle = Real::from_value(val.value());
 
 		if(this->priority.size() == 4){
-			for(int i = 0; i < this->priority.size(); i++){
+			for(int i =0; i<4; i++){
 				this->priority.pop();
 			}
+		
 		}
-
 		if(this->cycle == Real(1)){
-			this->priority.push_back(identifier);
+			this->priority.push_back(std::make_pair(this->relay_pdr[identifier],identifier));
 		}
+		
 
 	}else{
 
