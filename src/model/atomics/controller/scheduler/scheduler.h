@@ -44,7 +44,6 @@ class scheduler: public Atomic {
 		std::vector<Port > relayOut;
 		const Port &relayIn;
 		Port &trow;
-
 		Port &ack;
 
 

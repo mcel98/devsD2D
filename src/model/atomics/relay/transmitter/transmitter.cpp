@@ -57,6 +57,8 @@ transmitter::transmitter( const std::string &name ) :
 
 	mu = std::stof( ParallelMainSimulator::Instance().getParameter( description(), "mu" ) );
 
+	device_density = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "device_density" ) );
+
 	active_devices = std::binomial_distribution<int>(device_density, 0.2);
 
 	delay = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "tau" ) );
