@@ -38,7 +38,6 @@ scheduler::scheduler( const std::string &name ) :
     queuePort(addInputPort("queuePort")),
 	protocolPort(addInputPort("protocolPort")),
 	ack(addOutputPort("ack")),
-	delivered(4,0.0)
 {
 	for(int i=0; i<4; i++){
 
@@ -88,7 +87,7 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 	if(msg.port() == queuePort){
 
-		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
+		
 	
 		this->message_identifier = msg.senderModelId();
 				
@@ -115,16 +114,22 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 	}else{
 
+		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 		this->message_identifier = msg.senderModelId();
 
 		Real outcome = packet[1];
+		this->relay_pdr[this->message_identifier] += static_cast<float>(packet[0]) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
+		this->number_of_retransmission = packet[2];	
+
 
 		if(outcome == Real(0)){
-			this->delivered[msg.senderModelId()]++;
+			this->delivered[this->message_identifier]++;
+		}else{
+			holdIn( AtomicState::active, VTime::Zero );
+
 		}
 
-		this->relay_pdr[msg.senderModelId()] += static_cast<float>(packet[0]) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
-
+		
 
 	}
 

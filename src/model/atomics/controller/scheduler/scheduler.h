@@ -64,7 +64,7 @@ class scheduler: public Atomic {
 
 
         std::map<int, float>  relay_pdr;
-		std::vector<float> delivered;
+		std::map<int,float> delivered;
 		std::priority_queue<int>  priority;
 
 

@@ -37,6 +37,7 @@ class due: public Atomic {
 		/**************************************************************************/
         const Port &out;
 	
+	
 		// [(!) declare common variables]
 		// Lifetime programmed since the last state transition to the next planned internal transition.
 		VTime sigma;

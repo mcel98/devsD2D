@@ -38,14 +38,17 @@ timeAdvanceGenerator(0.0,1.0)
 
 Model &due::initFunction(){
 
-    double exp = log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
-    double ms, sc; 
+    double exp = -1 * log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
+    std::cout << exp << endl;
+    double ms, sc;
     ms = std::modf(exp, &sc);
+    std::cout << ms << "|" << sc << endl; 
 
-    std::string toTime = "0:0:"+ std::to_string(sc)+":"+ std::to_string(ms);
-
+    int seconds = (int)sc;
+    int milliseconds = (int)(ms *  1000);
+    std::cout << seconds << milliseconds <<endl;
     this->elapsed = VTime::Zero;
-    this->sigma = toTime;
+    this->sigma = VTime(0,0,seconds, milliseconds);
     this->timeLeft = this->sigma - this->elapsed;
 
     this->message_id = 0;
@@ -64,13 +67,16 @@ Model &due::externalFunction( const ExternalMessage &msg ){
 Model &due::internalFunction(const InternalMessage &msg ){
 
 
-    double exp = log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
+    double exp = -1 * log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
+    std::cout << exp << endl;
     double ms, sc; 
     ms = std::modf(exp, &sc);
 
-    std::string toTime = "0:0:"+ std::to_string(sc)+":"+ std::to_string(ms);
+    int seconds = (int)sc;
+    int milliseconds = (int)(ms *  1000);
 
-    this->sigma = toTime;
+
+    this->sigma = VTime(0,0,seconds, milliseconds);;
     this->message_id ++;
 
     cout << msg.time() << ".internal called. Sigma: "<< this->sigma.asString() << endl;
