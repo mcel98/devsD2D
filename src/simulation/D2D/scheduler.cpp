@@ -57,18 +57,14 @@ scheduler::scheduler( const std::string &name ) :
 ********************************************************************/
 Model &scheduler::initFunction()
 {
-	// [(!) Initialize common variables]
-	this->elapsed  = VTime::Zero;
- 	this->timeLeft = VTime::Inf;
- 	// this->sigma = VTime::Inf; // stays in active state until an external event occurs;
- 	this->sigma    = VTime::Inf; // force an internal transition in t=0;
+ 	this->sigma    = VTime::Zero; // force an internal transition in t=0;
 
  	// TODO: add init code here. (setting first state, etc
 	
 	this->message_identifier = 0;
 
  	// set next transition
- 	holdIn( AtomicState::passive, this->sigma  ) ;
+ 	passivate();
 	return *this ;
 }
 
@@ -86,13 +82,15 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 	if(msg.port() == queuePort){
 		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 
-		this->message_identifier = static_cast<int>(packet[2].value());	
+		this->message_identifier = static_cast<int>(packet[0].value());	
 		
 		holdIn( AtomicState::active, VTime::Zero );
 			
 	}else if(msg.port() == protocolPort){
 
 		int identifier = msg.senderModelId();
+
+		std::cout << identifier << endl;
 		
 		Real cycle = Real::from_value(msg.value());
 
@@ -151,7 +149,7 @@ Model &scheduler::internalFunction( const InternalMessage &msg )
 	//TODO: implement the internal function here
 
 	this->sigma = VTime::Inf; // stays in passive state until an external event occurs;
-	holdIn( AtomicState::passive, this->sigma );
+	passivate();
 	return *this;
 
 }
@@ -168,6 +166,7 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 	// sendOutput( msg.time(), out, 1) ;
 	// value could be a tuple with different number of elements: 
 	// Tuple<Real> out_value{Real(value), 0, 1};
+	std::cout << "selecting..." << endl;
 	
 	if(Real(this->maxRetransmission) >= this->number_of_retransmission){
 		int outPort = 0;

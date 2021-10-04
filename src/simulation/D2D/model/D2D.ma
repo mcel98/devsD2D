@@ -5,21 +5,21 @@ link : out@due in@relaySYSTEM
 link : out@relaySYSTEM out_port
 
 [relaySYSTEM]
-components : Relay1@relay Relay2@relay Relay3@relay Relay4@relay controller
+components : Relay1 Relay2 Relay3 Relay4 controller
 out : out stats
 in : in   
-Link :  controller@relay1Out packetPort@Relay1
-Link :  controller@relay2Out packetPort@Relay2
-Link :  controller@relay3Out packetPort@Relay3
-Link :  controller@relay4Out packetPort@Relay4
-Link :  protocol@Relay1 controller@relay1In
-Link :  protocol@Relay2 controller@relay2In  
-Link :  protocol@Relay3 controller@relay3In  
-Link :  protocol@Relay4 controller@relay4In
-Link :  updatePort@Relay1 controller@protocolPort
-Link :  updatePort@Relay2 controller@protocolPort  
-Link :  updatePort@Relay3 controller@protocolPort  
-Link :  updatePort@Relay4 controller@protocolPort  
+Link :  relay1Out@controller packetPort@Relay1
+Link :  relay2Out@controller packetPort@Relay2
+Link :  relay3Out@controller packetPort@Relay3
+Link :  relay4Out@controller packetPort@Relay4
+Link :  protocol@Relay1 relayIn@controller
+Link :  protocol@Relay2 relayIn@controller  
+Link :  protocol@Relay3 relayIn@controller  
+Link :  protocol@Relay4 relayIn@controller
+Link :  updatePort@Relay1 protocolPort@controller
+Link :  updatePort@Relay2 protocolPort@controller  
+Link :  updatePort@Relay3 protocolPort@controller  
+Link :  updatePort@Relay4 protocolPort@controller  
 Link : in in@controller
 Link : hop@Relay1 out
 Link : hop@Relay2 out
@@ -28,7 +28,7 @@ Link : hop@Relay4 out
 Link : trow@controller stats
 
 [controller]
-componentes : fifo@Queue Selector@scheduler
+components : fifo@Queue Selector@scheduler
 out : relay1Out relay2Out relay3Out relay4Out trow
 in :  in relayIn protocolPort
 Link : out@fifo queuePort@Selector
@@ -37,31 +37,55 @@ Link : relay1Out@Selector relay1Out
 Link : relay2Out@Selector relay2Out
 Link : relay3Out@Selector relay3Out
 Link : relay4Out@Selector relay4Out
-Link : relayIn relay1In@Selector 
-Link : relayIn relay2In@Selector
-Link : relayIn relay3In@Selector
-Link : relayIn relay4In@Selector
-Link : protocolPort@Selector protocolPort
+Link : relayIn relayIn@Selector 
+Link : protocolPort protocolPort@Selector 
 Link : trow@Selector trow
 Link : in in@fifo
 
 
 
-[relay]
-components : Transmitter@transmitter CycleDuty@cycleScheduler
+[Relay1]
+components : Transmitter1@transmitter CycleDuty1@cycleScheduler
 out : hop protocol updatePort 
-in : protocolPort packetPort  
-Link : protocolPort  protocolPort@CycleDuty
-Link : packetPort packetPort@Transmitter
-Link : hop@Transmitter hop
-Link : updatePort@CycleDuty updatePort
-Link : protocol@Transmitter protocol
+in :  packetPort  
+Link : packetPort packetPort@Transmitter1
+Link : hop@Transmitter1 hop
+Link : updatePort@CycleDuty1 updatePort
+Link : protocol@Transmitter1 protocol
+
+[Relay2]
+components : Transmitter2@transmitter CycleDuty2@cycleScheduler
+out : hop protocol updatePort 
+in :  packetPort  
+Link : packetPort packetPort@Transmitter2
+Link : hop@Transmitter2 hop
+Link : updatePort@CycleDuty2 updatePort
+Link : protocol@Transmitter2 protocol
+
+[Relay3]
+components : Transmitter3@transmitter CycleDuty3@cycleScheduler
+out : hop protocol updatePort 
+in :  packetPort  
+Link : packetPort packetPort@Transmitter3
+Link : hop@Transmitter3 hop
+Link : updatePort@CycleDuty3 updatePort
+Link : protocol@Transmitter3 protocol
+
+[Relay4]
+components : Transmitter4@transmitter CycleDuty4@cycleScheduler
+out : hop protocol updatePort 
+in :   packetPort  
+Link : packetPort packetPort@Transmitter4
+Link : hop@Transmitter4 hop
+Link : updatePort@CycleDuty4 updatePort
+Link : protocol@Transmitter4 protocol
+
 
 
 [Due]
-lambda : 1.2
+lambda : 0.5
 
-[Transmitter]
+[Transmitter1]
 mu : 1.5
 r : 10
 size : 4
@@ -72,8 +96,53 @@ Px : 13
 device_density : 500
 tau : 10
 
-[CycleDuty]
+[Transmitter2]
+mu : 1.5
+r : 10
+size : 4
+l: 2
+noise : 50
+alpha : 1.3
+Px : 13
+device_density : 500
+tau : 10
+
+[Transmitter3]
+mu : 1.5
+r : 10
+size : 4
+l: 2
+noise : 50
+alpha : 1.3
+Px : 13
+device_density : 500
+tau : 10
+
+[Transmitter4]
+mu : 1.5
+r : 10
+size : 4
+l: 2
+noise : 50
+alpha : 1.3
+Px : 13
+device_density : 500
+tau : 10
+
+[CycleDuty1]
 c : 0.2
 
-[scheduler]
+[CycleDuty2]
+c : 0.2
+
+[CycleDuty3]
+c : 0.2
+
+[CycleDuty4]
+c : 0.2
+
+[Selector]
 N : 4
+
+[fifo]
+preparation : ''
