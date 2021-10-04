@@ -38,6 +38,7 @@ timeAdvanceGenerator(0.0,1.0)
 
 Model &due::initFunction(){
 
+
     double exp = -1 * log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
     std::cout << exp << endl;
     double ms, sc;
@@ -66,6 +67,9 @@ Model &due::externalFunction( const ExternalMessage &msg ){
 
 Model &due::internalFunction(const InternalMessage &msg ){
 
+    #if VERBOSE
+	    PRINT_TIMES("int");
+    #endif
 
     double exp = -1 * log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
     std::cout << exp << endl;
@@ -73,11 +77,12 @@ Model &due::internalFunction(const InternalMessage &msg ){
     ms = std::modf(exp, &sc);
 
     int seconds = (int)sc;
-    int milliseconds = (int)(ms *  1000);
+    int milliseconds = (int)(ms * 1000);
 
 
     this->sigma = VTime(0,0,seconds, milliseconds);;
     this->message_id ++;
+
 
     cout << msg.time() << ".internal called. Sigma: "<< this->sigma.asString() << endl;
 
@@ -88,11 +93,11 @@ Model &due::internalFunction(const InternalMessage &msg ){
 
 Model &due::outputFunction( const CollectMessage &msg ){
 
-    int val = this->message_id;
+    Tuple<Real> out_value{this->message_id, 0};
 
-    sendOutput( msg.time(), out, val );
+    sendOutput( msg.time(), out, out_value );
 
-    cout << msg.time() << ". out called. MessageId:" << val <<  endl;
+    cout << msg.time() << ". out called. MessageId:" << this->message_id <<  endl;
 
     return *this;
 }

@@ -66,7 +66,7 @@ transmitter::transmitter( const std::string &name ) :
 	std::exponential_distribution<float> expGen(mu);
 	channel_gain = expGen(rnd);
 
-	VTime frequency_time = VTime(0,0,0,delay);
+	this->frequency_time = VTime(0,0,0,delay);
 
 	
 
@@ -80,17 +80,16 @@ transmitter::transmitter( const std::string &name ) :
 ********************************************************************/
 Model &transmitter::initFunction()
 {
-	// [(!) Initialize common variables]
-	this->elapsed  = VTime::Zero;
- 	this->timeLeft = VTime::Inf;
+	
  	// this->sigma = VTime::Inf; // stays in active state until an external event occurs;
- 	this->sigma    = VTime::Inf; // force an internal transition in t=0;
+ 	this->sigma = VTime::Zero; 
 
  	// TODO: add init code here. (setting first state, etc)
- 	this->interference = 0;
+ 	this->interference = 0.0;
  	// set next transition
- 	holdIn( AtomicState::passive, this->sigma  ) ;
-	return *this ;
+ 	passivate();
+
+	return *this;
 }
 
 /*******************************************************************
@@ -99,15 +98,14 @@ Model &transmitter::initFunction()
 ********************************************************************/
 Model &transmitter::externalFunction( const ExternalMessage &msg )
 {
-#if VERBOSE
-	PRINT_TIMES("dext");
-#endif
+	#if VERBOSE
+		PRINT_TIMES("received signal");
+	#endif
 	//[(!) update common variables]	
-	this->sigma    = nextChange();	
-	this->elapsed  = msg.time()-lastChange();	
- 	this->timeLeft = this->sigma - this->elapsed; 
+	
 
 	int total = this->active_devices(this->rnd);
+
 
 	int res = 0;
 
@@ -118,15 +116,18 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 
 		float h_y_b = expGen(this->rnd);
 		float r = static_cast< float >(distGen(this->rnd));
+		float alpha = this->path_loss_exponent;
 
-		res += h_y_b + std::pow(r, -1.0 * this->path_loss_exponent);
+		res += h_y_b + std::pow(r, -1.0 * alpha);
 		
 	}
 
-	this->interference = res;
-	this-> retransmission = Tuple<Real>::from_value(msg.value())[2] + Real(1);
 
-	holdIn( AtomicState::active, this->frequency_time);
+	this->interference = res;
+	this->retransmission = Tuple<Real>::from_value(msg.value())[1] + Real(1);
+	this->sigma = this->frequency_time;
+
+	holdIn( AtomicState::active, this->sigma);
 	return *this ;
 }
 
@@ -142,9 +143,9 @@ Model &transmitter::internalFunction( const InternalMessage &msg )
 #endif
 	//TODO: implement the internal function here
 
-	this->sigma = VTime::Inf; // stays in passive state until an external event occurs;
+	// stays in passive state until an external event occurs;
 
-	holdIn( AtomicState::passive, this->sigma );
+	passivate();
 	return *this;
 
 }
@@ -161,11 +162,12 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 
 	double choice = this->dist(rnd);
 	if(choice <= pdr){
-		sendOutput( msg.time(), hop, Real(pdr));
-		Tuple<Real> out_value{Real(pdr),0, this->retransmission};
-		sendOutput( msg.time(), protocol, out_value);	
+		Tuple<Real> hop_value{Real(pdr), this->retransmission, Real(this->id())};
+		sendOutput( msg.time(), hop, hop_value);
+		Tuple<Real> control_value{Real(pdr), this->retransmission,0,Real(this->id())};
+		sendOutput( msg.time(), protocol, control_value);	
 	}else{
-		Tuple<Real> out_value{Real(pdr), 1, this->retransmission};
+		Tuple<Real> out_value{Real(pdr), this->retransmission,1,Real(this->id())};
 		sendOutput( msg.time(), protocol, out_value);
 	}
 
@@ -175,7 +177,7 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 
 }
 
-float &transmitter::getPDR(float channel_gain,float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
+float transmitter::getPDR(float channel_gain,float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
 	float SINR = 0.0;
 	SINR = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
 

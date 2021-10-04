@@ -38,7 +38,7 @@ scheduler::scheduler( const std::string &name ) :
     queuePort(addInputPort("queuePort")),
 	protocolPort(addInputPort("protocolPort")),
 	ack(addOutputPort("ack")),
-	relayIn(addInputPort("queuePort"))
+	relayIn(addInputPort("relayIn"))
 {
 	for(int i=0; i<4; i++){
 		
@@ -82,15 +82,11 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 	PRINT_TIMES("dext");
 #endif
 	//[(!) update common variables]	
-	this->sigma    = nextChange();	
-	this->elapsed  = msg.time()-lastChange();	
- 	this->timeLeft = this->sigma - this->elapsed;
 
 	if(msg.port() == queuePort){
+		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 
-		
-	
-		this->message_identifier = msg.senderModelId();	
+		this->message_identifier = static_cast<int>(packet[2].value());	
 		
 		holdIn( AtomicState::active, VTime::Zero );
 			
@@ -101,12 +97,16 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		Real cycle = Real::from_value(msg.value());
 
 		if(this->priority.size() == 4){
+			std::cout << "reset" <<  endl;
 			for(int i =0; i<4; i++){
 				this->priority.pop();
+				
 			}
 		
 		}
 		if(cycle == Real(1)){
+			std::cout << "scheduler updated" <<  std::endl;
+			std::cout << identifier <<  std::endl;
 			this->priority.push(std::make_pair(this->relay_pdr[identifier],identifier));
 		}
 		
@@ -116,9 +116,9 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 		this->message_identifier = msg.senderModelId();
 
-		Real outcome = packet[1];
+		Real outcome = packet[2];
 		this->relay_pdr[this->message_identifier] += static_cast<float>(packet[0].value()) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
-		this->number_of_retransmission = packet[2];	
+		this->number_of_retransmission = packet[1];	
 
 
 		if(outcome == Real(0)){
@@ -170,15 +170,15 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 	// Tuple<Real> out_value{Real(value), 0, 1};
 	
 	if(Real(this->maxRetransmission) >= this->number_of_retransmission){
-		int outPort = -1;
+		int outPort = 0;
 		for(int i =0; i < this->relayOut.size(); i++){
 			InfluenceList relays = relayOut[i]->influences();
 			InfluenceList::iterator cursor;
-			for( cursor = relays.begin() ;cursor != relays.end() && (*cursor)->modelId() != this->message_identifier; cursor++ ) ;
+			for( cursor = relays.begin() ;cursor != relays.end() && (*cursor)->modelId() != this->message_identifier; cursor++ );
 			outPort = (*cursor)->modelId() == this->message_identifier?i:outPort;
 
 		}
-
+		std::cout << relayOut[outPort]->model().asString() << endl;
 		sendOutput(msg.time(),*relayOut[outPort] , this->number_of_retransmission);
 			
 	}else{

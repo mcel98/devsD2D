@@ -54,7 +54,7 @@ class transmitter: public Atomic {
 
 		VTime frequency_time;
 
-		float &getPDR(float channel_gain, float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split);
+		float getPDR(float channel_gain, float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split);
 
 		std::mt19937 rnd;
         std::uniform_real_distribution<double> dist;

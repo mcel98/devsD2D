@@ -35,7 +35,6 @@
 cycleScheduler::cycleScheduler( const std::string &name ) : 
 	Atomic( name ),
     updatePort(addOutputPort( "updatePort" )),
-    protocolPort(addInputPort("protocolPort")),
 	dist(0.0,1.0),
     frequency_time(0,0,0,25)
 {
@@ -46,6 +45,7 @@ cycleScheduler::cycleScheduler( const std::string &name ) :
     
 	cycle_rate = std::stof( ParallelMainSimulator::Instance().getParameter( description(), "c" ) );
 
+
 }
 
 /*******************************************************************
@@ -53,12 +53,8 @@ cycleScheduler::cycleScheduler( const std::string &name ) :
 ********************************************************************/
 Model &cycleScheduler::initFunction()
 {
-	// [(!) Initialize common variables]
-	this->elapsed  = VTime::Zero;
- 	this->timeLeft = this->frequency_time;
- 	// this->sigma = VTime::Inf; // stays in active state until an external event occurs;
+
  	this->sigma    = this->frequency_time; // force an internal transition in t=0;
-    this->update   = false;
 
     float round = this->dist(rnd);
     this->duty = Real(0);
@@ -81,15 +77,6 @@ Model &cycleScheduler::externalFunction( const ExternalMessage &msg )
 	PRINT_TIMES("dext");
 #endif
 	//[(!) update common variables]	
-	this->sigma    = VTime::Zero;	
-	this->elapsed  = msg.time()-lastChange();	
- 	this->timeLeft = this->sigma - this->elapsed;
-	
-    this->update = true;
-    
-	
-
-	holdIn( AtomicState::active, this->sigma );
 	return *this ;
 }
 
@@ -101,26 +88,17 @@ Model &cycleScheduler::externalFunction( const ExternalMessage &msg )
 Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 {
 #if VERBOSE
-	PRINT_TIMES("dint");
+	PRINT_TIMES("cycleScheduler");
 #endif
 	//TODO: implement the internal function here
-
-	if(update){
-
-        this->sigma = this->frequency_time;
-        this->update = false;
-
-    }else{
 
         float round = this->dist(rnd);
         this->duty = Real(0);
         if(round <= this->cycle_rate){
             this->duty = Real(1);
-        }
+		}
 
-    }
-
-	holdIn( AtomicState::active, this->sigma );
+	holdIn( AtomicState::active, this->frequency_time );
 	return *this;
 
 }
@@ -132,11 +110,8 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 ********************************************************************/
 Model &cycleScheduler::outputFunction( const CollectMessage &msg )
 {
-
-   if(this->update){
-    
+	std::cout << "updating scheduler" << std::endl;
     sendOutput( msg.time(), updatePort, this->duty);
-   }
 	
 	return *this;
 

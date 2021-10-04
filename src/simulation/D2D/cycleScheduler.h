@@ -38,7 +38,6 @@ class cycleScheduler: public Atomic {
 		// Distribution *dist ;
 		// Distribution &distribution()	{ return *dist; }
 		/**************************************************************************/
-        const Port &protocolPort;
         Port &updatePort;
 	
 		// [(!) declare common variables]
@@ -57,7 +56,6 @@ class cycleScheduler: public Atomic {
 
         VTime frequency_time;
 
-        bool update;
 		float cycle_rate;
         Real duty;
 
