@@ -39,7 +39,7 @@ transmitter::transmitter( const std::string &name ) :
     packetPort(addInputPort("packetPort")),
 	dist(0.0,1.0)
 {
-    std::mt19937::result_type seed = time(nullptr);
+    std::mt19937::result_type seed = time(NULL);
 
     rnd.seed(seed);
 
@@ -61,12 +61,11 @@ transmitter::transmitter( const std::string &name ) :
 
 	active_devices = std::binomial_distribution<int>(device_density, 0.2);
 
-	delay = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "tau" ) );
+	devices_maximum_distance = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "r2" ) );
 
 	std::exponential_distribution<float> expGen(mu);
 	channel_gain = expGen(rnd);
 
-	this->frequency_time = VTime(0,0,0,delay);
 
 	
 
@@ -83,7 +82,9 @@ Model &transmitter::initFunction()
 	
  	// this->sigma = VTime::Inf; // stays in active state until an external event occurs;
  	this->sigma = VTime::Zero; 
-
+	auto linked = protocol.influences();
+	auto relay_id = linked.front()->modelId();
+	std::cout << "transmitter model Id: " << relay_id << endl;
  	// TODO: add init code here. (setting first state, etc)
  	this->interference = 0.0;
  	// set next transition
@@ -98,9 +99,9 @@ Model &transmitter::initFunction()
 ********************************************************************/
 Model &transmitter::externalFunction( const ExternalMessage &msg )
 {
-	#if VERBOSE
-		PRINT_TIMES("received signal");
-	#endif
+#if VERBOSE
+	PRINT_TIMES("received signal");
+#endif
 	//[(!) update common variables]	
 	
 
@@ -110,7 +111,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 	int res = 0;
 
 	std::exponential_distribution<float> expGen(this->mu);
-	std::uniform_int_distribution<int> distGen(0, 1000);
+	std::uniform_int_distribution<int> distGen(0, this->devices_maximum_distance );
 
 	for(int i = 0; i<total;i++){
 
@@ -118,14 +119,13 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		float r = static_cast< float >(distGen(this->rnd));
 		float alpha = this->path_loss_exponent;
 
-		res += h_y_b * std::pow(r, -1.0 * alpha) * this->Px;
+		res += h_y_b * std::pow(r, -1.0 * alpha) * this->transmitter_power;
 		
 	}
 
 
 	this->interference = res;
-	this->retransmission = Tuple<Real>::from_value(msg.value())[1] + Real(1);
-	this->sigma = this->frequency_time;
+	this->retransmission = Real::from_value(msg.value()) + Real(1);
 
 	holdIn( AtomicState::active, this->sigma);
 	return *this ;
@@ -139,7 +139,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 Model &transmitter::internalFunction( const InternalMessage &msg )
 {
 #if VERBOSE
-	PRINT_TIMES("dint");
+	PRINT_TIMES("transmitter");
 #endif
 	//TODO: implement the internal function here
 
@@ -159,15 +159,19 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 {
 
     float pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
-
+	
 	double choice = this->dist(rnd);
+	auto linked = protocol.influences();
+	auto relay_id = linked.front()->modelId();
 	if(choice <= pdr){
-		Tuple<Real> hop_value{Real(pdr), this->retransmission, Real(this->id())};
+		std::cout << "sucess" << endl;
+		Tuple<Real> hop_value{Real(pdr), this->retransmission, Real(relay_id)};
 		sendOutput( msg.time(), hop, hop_value);
-		Tuple<Real> control_value{Real(pdr), this->retransmission,0,Real(this->id())};
+		Tuple<Real> control_value{Real(pdr), this->retransmission,0,Real(relay_id)};
 		sendOutput( msg.time(), protocol, control_value);	
 	}else{
-		Tuple<Real> out_value{Real(pdr), this->retransmission,1,Real(this->id())};
+		std::cout << "fail" << endl;
+		Tuple<Real> out_value{Real(pdr), this->retransmission,1,Real(relay_id)};
 		sendOutput( msg.time(), protocol, out_value);
 	}
 

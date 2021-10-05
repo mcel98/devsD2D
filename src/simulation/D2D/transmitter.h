@@ -52,7 +52,6 @@ class transmitter: public Atomic {
 		// Time remaining to complete the last programmed Lifetime
 		VTime timeLeft;
 
-		VTime frequency_time;
 
 		float getPDR(float channel_gain, float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split);
 
@@ -64,6 +63,7 @@ class transmitter: public Atomic {
 		float mu;
 		float channel_gain;
         int distance_to_bs;
+		int devices_maximum_distance;
 		int packet_size;
         int packet_split;
         float noise;
@@ -71,7 +71,6 @@ class transmitter: public Atomic {
         float transmitter_power;
 		float interference;
 		int device_density;
-		int delay;
 		Real retransmission;
 
 	

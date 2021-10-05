@@ -41,9 +41,12 @@ class scheduler: public Atomic {
 		/**************************************************************************/
 		const Port &queuePort;
 		const Port &protocolPort;
-
-		PortList relayOut;
 		const Port &relayIn;
+
+		Port &relayOut1;
+		Port &relayOut2;
+		Port &relayOut3;
+		Port &relayOut4;
 		Port &trow;
 		Port &ack;
 
@@ -58,18 +61,20 @@ class scheduler: public Atomic {
 		// Time remaining to complete the last programmed Lifetime
 		VTime timeLeft;
 
-		std::mt19937 rnd;
-
 		float lambda;
 
 
         std::map<int, float>  relay_pdr;
-		std::map<int,float> delivered;
+		std::map< int, Port*> port_hash;
+		std::map<int,float> sent;
 		std::priority_queue< std::pair<float,int> >  priority;
 
 
 		int maxRetransmission;
 		int message_identifier;
+
+		bool acknowledge;
+		int updates;
 
 		Real number_of_retransmission;
 

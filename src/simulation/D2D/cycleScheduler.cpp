@@ -36,12 +36,9 @@ cycleScheduler::cycleScheduler( const std::string &name ) :
 	Atomic( name ),
     updatePort(addOutputPort( "updatePort" )),
 	dist(0.0,1.0),
-    frequency_time(0,0,0,25)
+    frequency_time(0,0,1,0)
 {
-    std::mt19937::result_type seed = time(nullptr);
-    duty = Real(0); 
-
-    rnd.seed(seed);
+    
     
 	cycle_rate = std::stof( ParallelMainSimulator::Instance().getParameter( description(), "c" ) );
 
@@ -54,11 +51,14 @@ cycleScheduler::cycleScheduler( const std::string &name ) :
 Model &cycleScheduler::initFunction()
 {
 
+	std::random_device rd;
+    this->rnd.seed(rd());
  	this->sigma    = this->frequency_time; // force an internal transition in t=0;
 
     float round = this->dist(rnd);
+	std::cout << "duty choice:" << round << endl;
     this->duty = Real(0);
-    if(duty < this->cycle_rate){
+    if(round <= this->cycle_rate){
         this->duty = Real(1);
     }
 
@@ -93,6 +93,7 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 	//TODO: implement the internal function here
 
         float round = this->dist(rnd);
+		std::cout << "duty choice:" << round << endl;
         this->duty = Real(0);
         if(round <= this->cycle_rate){
             this->duty = Real(1);
@@ -111,7 +112,10 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 Model &cycleScheduler::outputFunction( const CollectMessage &msg )
 {
 	std::cout << "updating scheduler" << std::endl;
-    sendOutput( msg.time(), updatePort, this->duty);
+	auto linked = updatePort.influences();
+	auto relay_id= linked.front()->modelId();
+	Tuple<Real> out_value{this->duty,Real(relay_id)};
+    sendOutput( msg.time(), updatePort, out_value);
 	
 	return *this;
 

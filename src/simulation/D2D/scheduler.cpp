@@ -38,16 +38,14 @@ scheduler::scheduler( const std::string &name ) :
     queuePort(addInputPort("queuePort")),
 	protocolPort(addInputPort("protocolPort")),
 	ack(addOutputPort("ack")),
-	relayIn(addInputPort("relayIn"))
+	relayIn(addInputPort("relayIn")),
+	relayOut1(addOutputPort("relay1Out")),
+	relayOut2(addOutputPort("relay2Out")),
+	relayOut3(addOutputPort("relay3Out")),
+	relayOut4(addOutputPort("relay4Out"))
 {
-	for(int i=0; i<4; i++){
-		
-		relayOut[i] = &addOutputPort("relay"+std::to_string(i+1)+"Out");
-
-	}
 	maxRetransmission = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "N" ) );
-	std::mt19937::result_type seed = time(nullptr);
-    rnd.seed(seed);
+
     
 	
 }
@@ -61,7 +59,29 @@ Model &scheduler::initFunction()
 
  	// TODO: add init code here. (setting first state, etc
 	
+	auto linked = relayOut1.influences();
+	auto coupledPort= linked.front()->influences();
+	auto id= coupledPort.front()->modelId();
+	port_hash[id] = &relayOut1;
+
+	linked = relayOut2.influences();
+	coupledPort= linked.front()->influences();
+	id= coupledPort.front()->modelId();
+	port_hash[id] = &relayOut2;
+
+	linked = relayOut3.influences();
+	coupledPort= linked.front()->influences();
+	id= coupledPort.front()->modelId();
+	port_hash[id] = &relayOut3;
+
+	linked = relayOut4.influences();
+	coupledPort= linked.front()->influences();
+	id= coupledPort.front()->modelId();
+	port_hash[id] = &relayOut4;
+	
 	this->message_identifier = 0;
+	this->updates = 0;
+	this->acknowledge = false;
 
  	// set next transition
  	passivate();
@@ -75,31 +95,37 @@ Model &scheduler::initFunction()
 Model &scheduler::externalFunction( const ExternalMessage &msg )
 {
 #if VERBOSE
-	PRINT_TIMES("dext");
+	PRINT_TIMES("scheduler_control");
 #endif
 	//[(!) update common variables]	
 
 	if(msg.port() == queuePort){
-		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 
-		this->message_identifier = static_cast<int>(packet[0].value());	
+		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
+	
+		this->number_of_retransmission = packet[1];		
 		
 		holdIn( AtomicState::active, VTime::Zero );
 			
 	}else if(msg.port() == protocolPort){
 
-		int identifier = msg.senderModelId();
+		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 
-		std::cout << identifier << endl;
+		int identifier = static_cast<int>(packet[1].value());
+		this->updates++;
+
+		std::cout << "model id:"<< identifier << endl;
 		
-		Real cycle = Real::from_value(msg.value());
+		Real cycle = packet[0];
+		std::cout << "duty: " << cycle <<  endl;
 
-		if(this->priority.size() == 4){
+		if(this->updates > 4){	
 			std::cout << "reset" <<  endl;
-			for(int i =0; i<4; i++){
+			while(!this->priority.empty()){
 				this->priority.pop();
 				
 			}
+			this->updates = 0;
 		
 		}
 		if(cycle == Real(1)){
@@ -107,24 +133,30 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 			std::cout << identifier <<  std::endl;
 			this->priority.push(std::make_pair(this->relay_pdr[identifier],identifier));
 		}
-		
 
 	}else{
 
+		std::cout << "checking response..." <<  std::endl;
 		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
-		this->message_identifier = msg.senderModelId();
+		this->message_identifier = static_cast<int>(packet[3].value());
+		std::cout << "model id:"<< this->message_identifier << endl;
+		this->sent[this->message_identifier]++;
 
 		Real outcome = packet[2];
-		this->relay_pdr[this->message_identifier] += static_cast<float>(packet[0].value()) / this->delivered[msg.senderModelId()]; // testear que msg.senderModelId() devuelva id del relay
-		this->number_of_retransmission = packet[1];	
+		this->relay_pdr[this->message_identifier] += static_cast<float>(packet[0].value()) / this->sent[this->message_identifier]; // testear que msg.senderModelId() devuelva id del relay
+		this->number_of_retransmission = packet[1];
+		this->priority.push(std::make_pair(this->relay_pdr[this->message_identifier],this->message_identifier));	
 
 
 		if(outcome == Real(0)){
-			this->delivered[this->message_identifier]++;
-		}else{
-			holdIn( AtomicState::active, VTime::Zero );
+			this->acknowledge = true;
 
+		}else{
+			std::cout << "retransmitting..." <<  std::endl;
+			this->acknowledge = false;
 		}
+
+		holdIn( AtomicState::active, VTime::Zero );
 
 		
 
@@ -148,7 +180,7 @@ Model &scheduler::internalFunction( const InternalMessage &msg )
 #endif
 	//TODO: implement the internal function here
 
-	this->sigma = VTime::Inf; // stays in passive state until an external event occurs;
+	 // stays in passive state until an external event occurs;
 	passivate();
 	return *this;
 
@@ -166,22 +198,27 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 	// sendOutput( msg.time(), out, 1) ;
 	// value could be a tuple with different number of elements: 
 	// Tuple<Real> out_value{Real(value), 0, 1};
-	std::cout << "selecting..." << endl;
-	
-	if(Real(this->maxRetransmission) >= this->number_of_retransmission){
-		int outPort = 0;
-		for(int i =0; i < this->relayOut.size(); i++){
-			InfluenceList relays = relayOut[i]->influences();
-			InfluenceList::iterator cursor;
-			for( cursor = relays.begin() ;cursor != relays.end() && (*cursor)->modelId() != this->message_identifier; cursor++ );
-			outPort = (*cursor)->modelId() == this->message_identifier?i:outPort;
 
+	
+	if(Real(this->maxRetransmission) >= this->number_of_retransmission	&& Real(this->priority.size()) > Real(0)){
+		
+		if(!this->acknowledge){
+			std::pair<float,int> selectedRelay =  this->priority.top();
+			this->priority.pop();
+			std::cout << "selecting..." << endl;
+			int outRelay = std::get<1>(selectedRelay);
+			std::cout << "selected Relay: " << outRelay << endl; 
+			std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
+			std::cout << "message transmitted" << endl;
+			sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
+		}else{
+			std::cout << "delivered" << endl;
+			sendOutput(msg.time(), ack, Real(0) );
 		}
-		std::cout << relayOut[outPort]->model().asString() << endl;
-		sendOutput(msg.time(),*relayOut[outPort] , this->number_of_retransmission);
 			
 	}else{
-
+		std::cout << "discarded" << endl;
+		sendOutput(msg.time(), ack, Real(0) );
 		sendOutput(msg.time(),trow, this->number_of_retransmission);
 	}
 

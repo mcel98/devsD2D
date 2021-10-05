@@ -30,7 +30,7 @@ due::due(const std::string &name): Atomic(name),
 out(addOutputPort( "out" )),
 timeAdvanceGenerator(0.0,1.0)
 {
-    std::mt19937::result_type seed = time(nullptr);
+    std::mt19937::result_type seed = time(NULL);
     rnd.seed(seed);
     lambda = std::stod(ParallelMainSimulator::Instance().getParameter( description(), "lambda" ));
 
@@ -53,6 +53,7 @@ Model &due::initFunction(){
     this->timeLeft = this->sigma - this->elapsed;
 
     this->message_id = 0;
+
 
 
     holdIn( AtomicState::active, this->sigma  );
@@ -93,7 +94,7 @@ Model &due::internalFunction(const InternalMessage &msg ){
 
 Model &due::outputFunction( const CollectMessage &msg ){
 
-    Tuple<Real> out_value{this->message_id, 0};
+    Tuple<Real> out_value{Real(this->message_id), 0};
 
     sendOutput( msg.time(), out, out_value );
 
