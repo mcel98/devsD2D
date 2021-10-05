@@ -39,9 +39,9 @@ transmitter::transmitter( const std::string &name ) :
     packetPort(addInputPort("packetPort")),
 	dist(0.0,1.0)
 {
-    std::mt19937::result_type seed = time(NULL);
+    std::random_device rd;
 
-    rnd.seed(seed);
+    rnd.seed(rd());
 
     distance_to_bs = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "r" ) );
 
@@ -163,6 +163,7 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 	double choice = this->dist(rnd);
 	auto linked = protocol.influences();
 	auto relay_id = linked.front()->modelId();
+	std::cout << "transmitter returns packet's PDR: " << pdr << "and choose: " << choice << endl;
 	if(choice <= pdr){
 		std::cout << "sucess" << endl;
 		Tuple<Real> hop_value{Real(pdr), this->retransmission, Real(relay_id)};
@@ -186,9 +187,9 @@ float transmitter::getPDR(float channel_gain,float interference,float noise,floa
 	SINR = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
 
 	float pb = 0.5 * std::erfc(std::sqrt(SINR)/std::sqrt(2));
-	float PDR = 0.0;
-	for(int i =0; i < packet_size / packet_split; i++){
-		PDR += std::pow((1 - pb), packet_split);
+	float PDR = 1.0;
+	for(int i =0; i < (packet_size / packet_split + (packet_size % packet_split != 0)); i++){
+		PDR = std::pow((1 - pb), packet_split) * PDR;
 	}
 
 	return PDR;

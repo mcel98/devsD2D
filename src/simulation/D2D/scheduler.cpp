@@ -82,6 +82,8 @@ Model &scheduler::initFunction()
 	this->message_identifier = 0;
 	this->updates = 0;
 	this->acknowledge = false;
+	this->wait = false;
+
 
  	// set next transition
  	passivate();
@@ -103,9 +105,17 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 	
-		this->number_of_retransmission = packet[1];		
-		
-		holdIn( AtomicState::active, VTime::Zero );
+		this->number_of_retransmission = packet[1];
+		this->acknowledge = false;
+
+		if( this->priority.size() != 0 ){
+
+			holdIn( AtomicState::active, VTime::Zero );
+
+		}else{
+			this->wait = true;
+			passivate();
+		}
 			
 	}else if(msg.port() == protocolPort){
 
@@ -129,10 +139,22 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		
 		}
 		if(cycle == Real(1)){
+			float averagePDR;
+			if ( this->relay_pdr.count(identifier) ==  0 ){
+				averagePDR = 1;
+			}else{
+				averagePDR = this->relay_pdr[identifier];
+			}
+
 			std::cout << "scheduler updated" <<  std::endl;
 			std::cout << identifier <<  std::endl;
-			this->priority.push(std::make_pair(this->relay_pdr[identifier],identifier));
+			this->priority.push(std::make_pair(averagePDR,identifier));
+			if(this->wait){
+				this->wait = false;
+				holdIn( AtomicState::active, VTime::Zero );
+			}
 		}
+
 
 	}else{
 
@@ -150,10 +172,10 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 		if(outcome == Real(0)){
 			this->acknowledge = true;
-
 		}else{
 			std::cout << "retransmitting..." <<  std::endl;
 			this->acknowledge = false;
+
 		}
 
 		holdIn( AtomicState::active, VTime::Zero );
@@ -180,8 +202,10 @@ Model &scheduler::internalFunction( const InternalMessage &msg )
 #endif
 	//TODO: implement the internal function here
 
-	 // stays in passive state until an external event occurs;
 	passivate();
+	
+	 // stays in passive state until an external event occurs;
+	
 	return *this;
 
 }
@@ -200,22 +224,22 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 	// Tuple<Real> out_value{Real(value), 0, 1};
 
 	
-	if(Real(this->maxRetransmission) >= this->number_of_retransmission	&& Real(this->priority.size()) > Real(0)){
-		
-		if(!this->acknowledge){
-			std::pair<float,int> selectedRelay =  this->priority.top();
-			this->priority.pop();
-			std::cout << "selecting..." << endl;
-			int outRelay = std::get<1>(selectedRelay);
-			std::cout << "selected Relay: " << outRelay << endl; 
-			std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
-			std::cout << "message transmitted" << endl;
-			sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
-		}else{
-			std::cout << "delivered" << endl;
-			sendOutput(msg.time(), ack, Real(0) );
-		}
+	if(Real(this->maxRetransmission) >= this->number_of_retransmission){
 			
+			if(!this->acknowledge){
+				std::pair<float,int> selectedRelay =  this->priority.top();
+				this->priority.pop();
+				std::cout << "selecting..." << endl;
+				int outRelay = std::get<1>(selectedRelay);
+				std::cout << "selected Relay: " << outRelay << endl; 
+				std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
+				std::cout << "message transmitted" << endl;
+				sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
+			}else{
+				std::cout << "delivered/listening for package" << endl;
+				sendOutput(msg.time(), ack, Real(0) );
+			}
+
 	}else{
 		std::cout << "discarded" << endl;
 		sendOutput(msg.time(), ack, Real(0) );

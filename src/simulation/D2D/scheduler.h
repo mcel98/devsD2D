@@ -74,6 +74,7 @@ class scheduler: public Atomic {
 		int message_identifier;
 
 		bool acknowledge;
+		bool wait;
 		int updates;
 
 		Real number_of_retransmission;
