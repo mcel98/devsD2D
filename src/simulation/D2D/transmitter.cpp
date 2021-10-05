@@ -110,7 +110,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 	int res = 0;
 
 	std::exponential_distribution<float> expGen(this->mu);
-	std::uniform_int_distribution<int> distGen(0, this->device_density);
+	std::uniform_int_distribution<int> distGen(0, 1000);
 
 	for(int i = 0; i<total;i++){
 
@@ -118,7 +118,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		float r = static_cast< float >(distGen(this->rnd));
 		float alpha = this->path_loss_exponent;
 
-		res += h_y_b + std::pow(r, -1.0 * alpha);
+		res += h_y_b * std::pow(r, -1.0 * alpha) * this->Px;
 		
 	}
 
