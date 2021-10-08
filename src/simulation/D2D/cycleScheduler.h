@@ -7,6 +7,8 @@
 #include "atomic.h"  // class Atomic
 #include "VTime.h"
 #include <math.h>
+#include <vector>
+
 
 
 #define ATOMIC_MODEL_NAME "cycleScheduler" // cambiar nombre
@@ -38,7 +40,8 @@ class cycleScheduler: public Atomic {
 		// Distribution *dist ;
 		// Distribution &distribution()	{ return *dist; }
 		/**************************************************************************/
-        Port &updatePort;
+        Port &ProtocolOut;
+		const Port &ProtocolIn;
 	
 		// [(!) declare common variables]
 		// Lifetime programmed since the last state transition to the next planned internal transition.
@@ -56,9 +59,9 @@ class cycleScheduler: public Atomic {
 
         VTime frequency_time;
 
+		bool send_info;
 		float cycle_rate;
-        Real duty;
-
+        std::vector<Real> duty;
 
 	
 };	// class cycleScheduler

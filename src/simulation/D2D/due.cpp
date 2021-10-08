@@ -43,7 +43,6 @@ Model &due::initFunction(){
     std::cout << exp << endl;
     double ms, sc;
     ms = std::modf(exp, &sc);
-    std::cout << ms << "|" << sc << endl; 
 
     int seconds = (int)sc;
     int milliseconds = (int)(ms *  1000);

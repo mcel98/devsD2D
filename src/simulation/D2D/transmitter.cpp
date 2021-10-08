@@ -35,7 +35,9 @@
 transmitter::transmitter( const std::string &name ) : 
 	Atomic( name ),
     hop(addOutputPort( "hop" )),
-    protocol(addOutputPort( "protocol" )),
+    retransmit(addOutputPort( "retransmit" )),
+	ProtocolOut(addOutputPort( "ProtocolOut")),
+	ProtocolIn(addInputPort("ProtocolIn")),
     packetPort(addInputPort("packetPort")),
 	dist(0.0,1.0)
 {
@@ -82,8 +84,9 @@ Model &transmitter::initFunction()
 	
  	// this->sigma = VTime::Inf; // stays in active state until an external event occurs;
  	this->sigma = VTime::Zero; 
-	auto linked = protocol.influences();
+	auto linked = retransmit.influences();
 	auto relay_id = linked.front()->modelId();
+	this->send_info = true;
 	std::cout << "transmitter model Id: " << relay_id << endl;
  	// TODO: add init code here. (setting first state, etc)
  	this->interference = 0.0;
@@ -104,31 +107,41 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 #endif
 	//[(!) update common variables]	
 	
+	
 
-	int total = this->active_devices(this->rnd);
+	if(msg.port() == ProtocolIn){
+		this->send_info = true;
+
+		int total = this->active_devices(this->rnd);
 
 
-	int res = 0;
+		int res = 0;
 
-	std::exponential_distribution<float> expGen(this->mu);
-	std::uniform_int_distribution<int> distGen(0, this->devices_maximum_distance );
+		std::exponential_distribution<float> expGen(this->mu);
+		std::uniform_int_distribution<int> distGen(0, this->devices_maximum_distance );
 
-	for(int i = 0; i<total;i++){
+		for(int i = 0; i<total;i++){
 
-		float h_y_b = expGen(this->rnd);
-		float r = static_cast< float >(distGen(this->rnd));
-		float alpha = this->path_loss_exponent;
+			float h_y_b = expGen(this->rnd);
+			float r = static_cast< float >(distGen(this->rnd));
+			float alpha = this->path_loss_exponent;
 
-		res += h_y_b * std::pow(r, -1.0 * alpha) * this->transmitter_power;
-		
+			res += h_y_b * std::pow(r, -1.0 * alpha) * this->transmitter_power;
+			
+		}
+
+
+		this->interference = res;
+
+		this->pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
+	
+	}else{
+		this->retransmission = Real::from_value(msg.value());
+		return *this ;
+
 	}
 
-
-	this->interference = res;
-	this->retransmission = Real::from_value(msg.value()) + Real(1);
-
 	holdIn( AtomicState::active, this->sigma);
-	return *this ;
 }
 
 /*******************************************************************
@@ -158,23 +171,38 @@ Model &transmitter::internalFunction( const InternalMessage &msg )
 Model &transmitter::outputFunction( const CollectMessage &msg )
 {
 
-    float pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
-	
-	double choice = this->dist(rnd);
-	auto linked = protocol.influences();
-	auto relay_id = linked.front()->modelId();
-	std::cout << "transmitter returns packet's PDR: " << pdr << "and choose: " << choice << endl;
-	if(choice <= pdr){
-		std::cout << "sucess" << endl;
-		Tuple<Real> hop_value{Real(pdr), this->retransmission, Real(relay_id)};
-		sendOutput( msg.time(), hop, hop_value);
-		Tuple<Real> control_value{Real(pdr), this->retransmission,0,Real(relay_id)};
-		sendOutput( msg.time(), protocol, control_value);	
+    if(send_info){
+
+		auto linked = ProtocolOut.influences();
+		auto relay_id = linked.front()->modelId();
+
+		std::vector<Real> vector_out(4,Real(0));
+		vector_out.push_back(Real(1));
+		vector_out.push_back(Real(relay_id));
+		vector_out.push_back(Real(this->pdr));
+		Tuple<Real> out_value(&vector_out);
+		sendOutput( msg.time(), ProtocolOut, out_value);
 	}else{
-		std::cout << "fail" << endl;
-		Tuple<Real> out_value{Real(pdr), this->retransmission,1,Real(relay_id)};
-		sendOutput( msg.time(), protocol, out_value);
+
+		double choice = this->dist(rnd);
+		auto linked = retransmit.influences();
+		auto relay_id = linked.front()->modelId();
+		std::cout << "transmitter returns packet's PDR: " << this->pdr << " and choose: " << choice << endl;
+		if(choice <= this->pdr){
+			std::cout << "sucess" << endl;
+			Tuple<Real> hop_value{Real(this->pdr), this->retransmission, Real(relay_id)};
+			sendOutput( msg.time(), hop, hop_value);
+			Tuple<Real> control_value{Real(pdr), this->retransmission,0,Real(relay_id)};
+			sendOutput( msg.time(), retransmit, control_value);	
+		}else{
+			std::cout << "fail" << endl;
+			Tuple<Real> out_value{Real(pdr), this->retransmission,1,Real(relay_id)};
+			sendOutput( msg.time(), retransmit, out_value);
+		}
+
 	}
+	
+
 
 
 	

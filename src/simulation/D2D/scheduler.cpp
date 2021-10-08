@@ -36,13 +36,14 @@ scheduler::scheduler( const std::string &name ) :
 	Atomic( name ),
 	trow(addOutputPort( "trow" )),
     queuePort(addInputPort("queuePort")),
-	protocolPort(addInputPort("protocolPort")),
+	protocolIn(addInputPort("protocolIn")),
 	ack(addOutputPort("ack")),
 	relayIn(addInputPort("relayIn")),
 	relayOut1(addOutputPort("relay1Out")),
 	relayOut2(addOutputPort("relay2Out")),
 	relayOut3(addOutputPort("relay3Out")),
-	relayOut4(addOutputPort("relay4Out"))
+	relayOut4(addOutputPort("relay4Out")),
+	protocolOut(addOutputPort("protocolOut"))
 {
 	maxRetransmission = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "N" ) );
 
@@ -82,7 +83,7 @@ Model &scheduler::initFunction()
 	this->message_identifier = 0;
 	this->updates = 0;
 	this->acknowledge = false;
-	this->wait = false;
+	this->wait_for_info = false;
 
 
  	// set next transition
@@ -107,55 +108,52 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 	
 		this->number_of_retransmission = packet[1];
 		this->acknowledge = false;
+		this->wait_for_info = true;
+		this->updates = 0;
 
-		if( this->priority.size() != 0 ){
+		std::cout << "reset" <<  endl;
 
-			holdIn( AtomicState::active, VTime::Zero );
+		holdIn( AtomicState::active, VTime::Zero );
 
-		}else{
-			this->wait = true;
-			passivate();
-		}
+
+		
+
 			
-	}else if(msg.port() == protocolPort){
-
+	}else if(msg.port() == protocolIn){
 		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
+		int update_from = static_cast<int>(packet[4].value());
+		int relay_identifier = static_cast<int>(packet[5].value());
 
-		int identifier = static_cast<int>(packet[1].value());
+		std::cout << "model id:"<< relay_identifier << endl;
+		if(update_from == 0){
+			std::vector<Real> cycle;
+			for(int i= 0; i<4;i++){
+
+				cycle.push_back(packet[i].value());
+				std::cout << "duty: " << cycle[i] <<  endl;
+
+			}
+			
+
+			
+			
+			duty_cycle_window[relay_identifier] = cycle;
+		}else{
+			float pdr = static_cast<float>(packet[6].value());
+			this->relay_pdr[relay_identifier] = pdr;
+			std::cout << "model id:"<< relay_identifier << endl;
+			std::cout << "pdr: " << pdr <<  endl;
+		}
+
 		this->updates++;
-
-		std::cout << "model id:"<< identifier << endl;
-		
-		Real cycle = packet[0];
-		std::cout << "duty: " << cycle <<  endl;
-
-		if(this->updates > 4){	
-			std::cout << "reset" <<  endl;
-			while(!this->priority.empty()){
-				this->priority.pop();
-				
-			}
-			this->updates = 0;
-		
-		}
-		if(cycle == Real(1)){
-			float averagePDR;
-			if ( this->relay_pdr.count(identifier) ==  0 ){
-				averagePDR = 1;
-			}else{
-				averagePDR = this->relay_pdr[identifier];
-			}
-
+		if(this->updates == 8){
+			this->choose_priority(this->relay_pdr, this->duty_cycle_window , this->priority);
 			std::cout << "scheduler updated" <<  std::endl;
-			std::cout << identifier <<  std::endl;
-			this->priority.push(std::make_pair(averagePDR,identifier));
-			if(this->wait){
-				this->wait = false;
-				holdIn( AtomicState::active, VTime::Zero );
-			}
-		}
-
-
+			this->wait_for_info = false;
+			holdIn( AtomicState::active, VTime::Zero );
+		}	
+		
+		
 	}else{
 
 		std::cout << "checking response..." <<  std::endl;
@@ -163,12 +161,8 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		this->message_identifier = static_cast<int>(packet[3].value());
 		std::cout << "model id:"<< this->message_identifier << endl;
 		this->sent[this->message_identifier]++;
-
 		Real outcome = packet[2];
-		this->relay_pdr[this->message_identifier] += static_cast<float>(packet[0].value()) / this->sent[this->message_identifier]; // testear que msg.senderModelId() devuelva id del relay
 		this->number_of_retransmission = packet[1];
-		this->priority.push(std::make_pair(this->relay_pdr[this->message_identifier],this->message_identifier));	
-
 
 		if(outcome == Real(0)){
 			this->acknowledge = true;
@@ -222,29 +216,45 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 	// sendOutput( msg.time(), out, 1) ;
 	// value could be a tuple with different number of elements: 
 	// Tuple<Real> out_value{Real(value), 0, 1};
+	if(this->wait_for_info){
 
-	
-	if(Real(this->maxRetransmission) >= this->number_of_retransmission){
-			
-			if(!this->acknowledge){
-				std::pair<float,int> selectedRelay =  this->priority.top();
-				this->priority.pop();
-				std::cout << "selecting..." << endl;
-				int outRelay = std::get<1>(selectedRelay);
-				std::cout << "selected Relay: " << outRelay << endl; 
-				std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
-				std::cout << "message transmitted" << endl;
-				sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
-			}else{
-				std::cout << "delivered/listening for package" << endl;
-				sendOutput(msg.time(), ack, Real(0) );
-			}
+		if(this->updates == 0){
+			sendOutput(msg.time(), protocolOut, Real(0) );
+		}
 
 	}else{
-		std::cout << "discarded" << endl;
-		sendOutput(msg.time(), ack, Real(0) );
-		sendOutput(msg.time(),trow, this->number_of_retransmission);
+
+			if(Real(this->maxRetransmission) >= this->number_of_retransmission){
+			
+				if(!this->acknowledge){
+
+					int outRelay =  this->priority[static_cast<int>(this->number_of_retransmission.value())];
+					this->number_of_retransmission = this->number_of_retransmission + Real(1);
+					if(outRelay != -1){
+						std::cout << "selecting..." << endl;
+						std::cout << "selected Relay: " << outRelay << endl; 
+						std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
+						std::cout << "message transmitted" << endl;
+						sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
+					}else{
+						std::cout << "all relays are busy" << endl;
+					}
+					
+				}else{
+					std::cout << "delivered/listening for package" << endl;
+					sendOutput(msg.time(), ack, Real(0) );
+				}
+
+			}else{
+				Tuple<Real> trow_info{this->relay_pdr[this->message_identifier], this->number_of_retransmission,  this->message_identifier};
+				sendOutput(msg.time(), ack, Real(0) );
+				sendOutput(msg.time(),trow, trow_info);
+			}
+
+
 	}
+	
+
 
 	
 	
@@ -258,4 +268,27 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 scheduler::~scheduler()
 {
 	//TODO: add destruction code here. Free distribution memory, etc. 
+}
+
+
+void scheduler::choose_priority(std::map<int, float> pdr, std::map<int, std::vector<Real> > window, std::vector< int > &res){
+
+	for(int i = 0; i<4; i++){
+		float max_pdr = 0;
+		for (std::map<int,std::vector<Real> >::iterator it=window.begin(); it!=window.end(); ++it){
+			std::vector<Real> relay_window = it->second;
+			float relay_pdr = pdr[it->first];
+			
+			bool cycle = Real(1) == relay_window[i]? true:false; //0000 0001 && 0000 0001
+			if(cycle && max_pdr < relay_pdr ){
+
+				res[i]=it->first;
+
+			}
+
+		}
+
+	 }
+
+	return;
 }

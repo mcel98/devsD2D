@@ -6,10 +6,12 @@
 #include <random>
 #include "atomic.h"  // class Atomic
 #include "VTime.h"
+
 #include <map>
 #include <vector>
 #include <queue>
 #include <string>
+
 
 
 #define ATOMIC_MODEL_NAME "scheduler" // cambiar nombre
@@ -40,16 +42,18 @@ class scheduler: public Atomic {
 		// Distribution &distribution()	{ return *dist; }
 		/**************************************************************************/
 		const Port &queuePort;
-		const Port &protocolPort;
+		const Port &protocolIn;
 		const Port &relayIn;
 
 		Port &relayOut1;
 		Port &relayOut2;
 		Port &relayOut3;
 		Port &relayOut4;
+		Port &protocolOut;
 		Port &trow;
 		Port &ack;
 
+		void choose_priority(std::map<int, float> pdr, std::map<int, std::vector<Real> > window, std::vector< int > &res);
 
 		// [(!) declare common variables]
 		// Lifetime programmed since the last state transition to the next planned internal transition.
@@ -65,16 +69,17 @@ class scheduler: public Atomic {
 
 
         std::map<int, float>  relay_pdr;
-		std::map< int, Port*> port_hash;
+		std::map<int, std::vector<Real> >  duty_cycle_window;
+		std::map<int, Port*> port_hash;
 		std::map<int,float> sent;
-		std::priority_queue< std::pair<float,int> >  priority;
+		std::vector< int >  priority;
 
 
 		int maxRetransmission;
 		int message_identifier;
 
 		bool acknowledge;
-		bool wait;
+		bool wait_for_info;
 		int updates;
 
 		Real number_of_retransmission;

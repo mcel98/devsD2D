@@ -1,27 +1,25 @@
-#ifndef _TRANSMITTER_H_ // cambiar nombre
+#ifndef _STATS_H_ // cambiar nombre
 
-#define _TRANSMITTER_H_ // cambiar nombre
+#define _STATS_H_ // cambiar nombre
 
 /** include files **/
 #include <random>
 #include "atomic.h"  // class Atomic
 #include "VTime.h"
+#include <map>
 #include <math.h>
 
-
-#define ATOMIC_MODEL_NAME "transmitter" // cambiar nombre
+#define ATOMIC_MODEL_NAME "stats" // cambiar nombre
 
 /** forward declarations **/
 //TODO: add distribution class declaration here if needed
 // Ej: class Distribution ;
 
 /** declarations **/
-
-
-class transmitter: public Atomic {
+class stats: public Atomic {
 	public:
-		transmitter( const string &name = ATOMIC_MODEL_NAME ); // Default constructor
-		~transmitter(); // Destructor
+		stats( const string &name = ATOMIC_MODEL_NAME ); // Default constructor
+		~stats(); // Destructor
 		virtual string className() const {return ATOMIC_MODEL_NAME;}
 	
 	protected:
@@ -38,11 +36,8 @@ class transmitter: public Atomic {
 		// Distribution *dist ;
 		// Distribution &distribution()	{ return *dist; }
 		/**************************************************************************/
-        const Port &packetPort;
-		Port &ProtocolOut;
-		const Port &ProtocolIn;
-        Port &retransmit;
-        Port &hop;
+        const Port &out;
+	
 	
 		// [(!) declare common variables]
 		// Lifetime programmed since the last state transition to the next planned internal transition.
@@ -54,32 +49,16 @@ class transmitter: public Atomic {
 		// Time remaining to complete the last programmed Lifetime
 		VTime timeLeft;
 
+		float getEDR();
+		float getEDD();
 
-		float getPDR(float channel_gain, float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split);
-
-		std::mt19937 rnd;
-        std::uniform_real_distribution<double> dist;
-		std::binomial_distribution<int>active_devices;
-
-		bool send_info;
-		float pdr;
-		
-
-		float mu;
-		float channel_gain;
-        int distance_to_bs;
-		int devices_maximum_distance;
-		int packet_size;
-        int packet_split;
-        float noise;
-        float path_loss_exponent;
-        float transmitter_power;
-		float interference;
-		int device_density;
-		Real retransmission;
+		int packet_loss;
+        int delivered;
+        std::map<int,float> sent;
+        std::map<int,int> DutyCycleWindow;
 
 	
-};	// class relay
+};	// class ModelTemplate
 
 
-#endif   //__TRANSMITTER_H 
+#endif   //__stats_H 

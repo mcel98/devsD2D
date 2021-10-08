@@ -34,7 +34,8 @@
 ********************************************************************/
 cycleScheduler::cycleScheduler( const std::string &name ) : 
 	Atomic( name ),
-    updatePort(addOutputPort( "updatePort" )),
+    ProtocolOut(addOutputPort( "ProtocolOut" )),
+	ProtocolIn(addOutputPort( "ProtocolIn" )),
 	dist(0.0,1.0),
     frequency_time(0,0,1,0)
 {
@@ -51,18 +52,26 @@ cycleScheduler::cycleScheduler( const std::string &name ) :
 Model &cycleScheduler::initFunction()
 {
 
+	this->send_info = false;
+
 	std::random_device rd;
     this->rnd.seed(rd());
  	this->sigma    = this->frequency_time; // force an internal transition in t=0;
-
-    float round = this->dist(rnd);
-	std::cout << "duty choice:" << round << endl;
-    this->duty = Real(0);
-    if(round <= this->cycle_rate){
-        this->duty = Real(1);
-    }
-
  	// set next transition
+
+	std::vector<Real> duty_window(4,Real(0)); 
+	this->send_info = false;	
+    
+	for(int i =0; i<4;i++){
+		float round = this->dist(rnd);
+		if(round <= this->cycle_rate){
+			std::cout << "duty choice:" << duty_window[i] << endl;
+           	duty_window[i] = Real(1);
+		}
+	}
+	this->duty = duty_window;
+	
+
  	holdIn( AtomicState::active, this->sigma  ) ;
 	return *this ;
 }
@@ -76,7 +85,7 @@ Model &cycleScheduler::externalFunction( const ExternalMessage &msg )
 #if VERBOSE
 	PRINT_TIMES("dext");
 #endif
-	//[(!) update common variables]	
+	this->send_info = true;	
 	return *this ;
 }
 
@@ -91,13 +100,19 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 	PRINT_TIMES("cycleScheduler");
 #endif
 	//TODO: implement the internal function here
-
-        float round = this->dist(rnd);
-		std::cout << "duty choice:" << round << endl;
-        this->duty = Real(0);
-        if(round <= this->cycle_rate){
-            this->duty = Real(1);
+		 
+	this->send_info = false;    
+	std::vector<Real> duty_window(4,Real(0)); 	
+    
+	for(int i =0; i<4;i++){
+		float round = this->dist(rnd);
+		if(round <= this->cycle_rate){
+			std::cout << "duty choice:" << duty_window[i] << endl;
+           	duty_window[i] = Real(1);
 		}
+	}
+	this->duty = duty_window;
+	
 
 	holdIn( AtomicState::active, this->frequency_time );
 	return *this;
@@ -111,12 +126,16 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 ********************************************************************/
 Model &cycleScheduler::outputFunction( const CollectMessage &msg )
 {
-	std::cout << "updating scheduler" << std::endl;
-	auto linked = updatePort.influences();
-	auto relay_id= linked.front()->modelId();
-	Tuple<Real> out_value{this->duty,Real(relay_id)};
-    sendOutput( msg.time(), updatePort, out_value);
-	
+	if(this->send_info){
+		std::cout << "updating scheduler" << std::endl;
+		auto linked = ProtocolOut.influences();
+		auto relay_id= linked.front()->modelId();
+		this->duty.push_back(Real(0));
+		this->duty.push_back(Real(relay_id));
+		this->duty.push_back(Real(0.0));
+		Tuple<Real> out_value(&this->duty);
+    	sendOutput( msg.time(), ProtocolOut, out_value);
+	}
 	return *this;
 
 }
