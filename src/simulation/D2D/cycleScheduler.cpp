@@ -65,7 +65,6 @@ Model &cycleScheduler::initFunction()
 	for(int i =0; i<4;i++){
 		float round = this->dist(rnd);
 		if(round <= this->cycle_rate){
-			std::cout << "duty choice:" << duty_window[i] << endl;
            	duty_window[i] = Real(1);
 		}
 	}
@@ -83,9 +82,10 @@ Model &cycleScheduler::initFunction()
 Model &cycleScheduler::externalFunction( const ExternalMessage &msg )
 {
 #if VERBOSE
-	PRINT_TIMES("dext");
+	PRINT_TIMES("signaling scheduler info:");
 #endif
 	this->send_info = true;	
+	
 	return *this ;
 }
 
@@ -96,9 +96,7 @@ Model &cycleScheduler::externalFunction( const ExternalMessage &msg )
 ********************************************************************/
 Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 {
-#if VERBOSE
-	PRINT_TIMES("cycleScheduler");
-#endif
+
 	//TODO: implement the internal function here
 		 
 	this->send_info = false;    
@@ -107,7 +105,6 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 	for(int i =0; i<4;i++){
 		float round = this->dist(rnd);
 		if(round <= this->cycle_rate){
-			std::cout << "duty choice:" << duty_window[i] << endl;
            	duty_window[i] = Real(1);
 		}
 	}
@@ -127,7 +124,7 @@ Model &cycleScheduler::internalFunction( const InternalMessage &msg )
 Model &cycleScheduler::outputFunction( const CollectMessage &msg )
 {
 	if(this->send_info){
-		std::cout << "updating scheduler" << std::endl;
+		std::cout << "window sent" << std::endl;
 		auto linked = ProtocolOut.influences();
 		auto relay_id= linked.front()->modelId();
 		this->duty.push_back(Real(0));

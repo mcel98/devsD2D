@@ -43,7 +43,8 @@ scheduler::scheduler( const std::string &name ) :
 	relayOut2(addOutputPort("relay2Out")),
 	relayOut3(addOutputPort("relay3Out")),
 	relayOut4(addOutputPort("relay4Out")),
-	protocolOut(addOutputPort("protocolOut"))
+	protocolOut(addOutputPort("protocolOut")),
+	priority(4,0)
 {
 	maxRetransmission = str2Int( ParallelMainSimulator::Instance().getParameter( description(), "N" ) );
 
@@ -111,7 +112,7 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		this->wait_for_info = true;
 		this->updates = 0;
 
-		std::cout << "reset" <<  endl;
+		std::cout << "scheduler ask for update" << endl;
 
 		holdIn( AtomicState::active, VTime::Zero );
 
@@ -120,6 +121,7 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 
 			
 	}else if(msg.port() == protocolIn){
+		
 		Tuple<Real> packet = Tuple<Real>::from_value(msg.value());
 		int update_from = static_cast<int>(packet[4].value());
 		int relay_identifier = static_cast<int>(packet[5].value());
@@ -146,6 +148,7 @@ Model &scheduler::externalFunction( const ExternalMessage &msg )
 		}
 
 		this->updates++;
+		std::cout << this->updates << endl;
 		if(this->updates == 8){
 			this->choose_priority(this->relay_pdr, this->duty_cycle_window , this->priority);
 			std::cout << "scheduler updated" <<  std::endl;
@@ -272,7 +275,7 @@ scheduler::~scheduler()
 
 
 void scheduler::choose_priority(std::map<int, float> pdr, std::map<int, std::vector<Real> > window, std::vector< int > &res){
-
+	//TODO: si un relay es elegido y ya habia se utilizado para un frame anterior descartar
 	for(int i = 0; i<4; i++){
 		float max_pdr = 0;
 		for (std::map<int,std::vector<Real> >::iterator it=window.begin(); it!=window.end(); ++it){

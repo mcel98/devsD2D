@@ -115,7 +115,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		int total = this->active_devices(this->rnd);
 
 
-		int res = 0;
+		float res = 0;
 
 		std::exponential_distribution<float> expGen(this->mu);
 		std::uniform_int_distribution<int> distGen(0, this->devices_maximum_distance );
@@ -134,14 +134,15 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		this->interference = res;
 
 		this->pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
-	
-	}else{
+		std::cout << this->pdr << endl;
+		std::cout << "pdr: " << this->pdr << "channel gain:" << this->channel_gain << " interference: " <<this->interference << " noise: "<< this->noise<< " alpha"<<this->path_loss_exponent << endl;
 		this->retransmission = Real::from_value(msg.value());
-		return *this ;
+		
 
 	}
 
 	holdIn( AtomicState::active, this->sigma);
+	return *this ;
 }
 
 /*******************************************************************
@@ -157,7 +158,7 @@ Model &transmitter::internalFunction( const InternalMessage &msg )
 	//TODO: implement the internal function here
 
 	// stays in passive state until an external event occurs;
-
+	this->send_info = false;
 	passivate();
 	return *this;
 
@@ -171,7 +172,9 @@ Model &transmitter::internalFunction( const InternalMessage &msg )
 Model &transmitter::outputFunction( const CollectMessage &msg )
 {
 
-    if(send_info){
+    if(this->send_info){
+
+		std::cout << "pdr sent" << endl;
 
 		auto linked = ProtocolOut.influences();
 		auto relay_id = linked.front()->modelId();
