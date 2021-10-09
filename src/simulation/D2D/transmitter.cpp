@@ -118,7 +118,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		float res = 0;
 
 		std::exponential_distribution<float> expGen(this->mu);
-		std::uniform_int_distribution<int> distGen(0, this->devices_maximum_distance );
+		std::uniform_int_distribution<int> distGen(1, this->devices_maximum_distance );
 
 		for(int i = 0; i<total;i++){
 
@@ -136,8 +136,12 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		this->pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
 		std::cout << this->pdr << endl;
 		std::cout << "pdr: " << this->pdr << "channel gain:" << this->channel_gain << " interference: " <<this->interference << " noise: "<< this->noise<< " alpha"<<this->path_loss_exponent << endl;
-		this->retransmission = Real::from_value(msg.value());
 		
+		
+
+	}else{
+
+		this->retransmission = Real::from_value(msg.value());
 
 	}
 

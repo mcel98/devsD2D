@@ -225,23 +225,23 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 			sendOutput(msg.time(), protocolOut, Real(0) );
 		}
 
-	}else{
+	}else{	
+			int outRelay =  this->priority[static_cast<int>(this->number_of_retransmission.value())];
+			while(outRelay == 0 &&  this->priority.size() > static_cast<int>(this->number_of_retransmission.value()) ){
+				this->number_of_retransmission = this->number_of_retransmission + Real(1);
+				outRelay = this->priority[static_cast<int>(this->number_of_retransmission.value())];
+
+			}
 
 			if(Real(this->maxRetransmission) >= this->number_of_retransmission){
 			
 				if(!this->acknowledge){
-
-					int outRelay =  this->priority[static_cast<int>(this->number_of_retransmission.value())];
 					this->number_of_retransmission = this->number_of_retransmission + Real(1);
-					if(outRelay != -1){
-						std::cout << "selecting..." << endl;
-						std::cout << "selected Relay: " << outRelay << endl; 
-						std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
-						std::cout << "message transmitted" << endl;
-						sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
-					}else{
-						std::cout << "all relays are busy" << endl;
-					}
+					std::cout << "selecting..." << endl;
+					std::cout << "selected Relay: " << outRelay << endl; 
+					std::cout << "Port: " <<this->port_hash[outRelay]->id() << endl; 
+					std::cout << "message transmitted" << endl;
+					sendOutput(msg.time(), *this->port_hash[outRelay] , this->number_of_retransmission);
 					
 				}else{
 					std::cout << "delivered/listening for package" << endl;
@@ -276,22 +276,28 @@ scheduler::~scheduler()
 
 void scheduler::choose_priority(std::map<int, float> pdr, std::map<int, std::vector<Real> > window, std::vector< int > &res){
 	//TODO: si un relay es elegido y ya habia se utilizado para un frame anterior descartar
-	for(int i = 0; i<4; i++){
-		float max_pdr = 0;
-		for (std::map<int,std::vector<Real> >::iterator it=window.begin(); it!=window.end(); ++it){
-			std::vector<Real> relay_window = it->second;
-			float relay_pdr = pdr[it->first];
-			
+	std::vector<bool> candidate(4,true);
+	for (std::map<int,std::vector<Real> >::iterator it=window.begin(); it!=window.end(); ++it){
+		std::vector<Real> relay_window = it->second;
+		float relay_pdr = pdr[it->first];
+		int has_n_cycles = 0;
+		for(int i=0; i<4; i++){
+			float max_pdr = res[i] != 0? pdr[res[i]]:0;			
 			bool cycle = Real(1) == relay_window[i]? true:false; //0000 0001 && 0000 0001
-			if(cycle && max_pdr < relay_pdr ){
-
+		
+			if(cycle && ( (max_pdr < relay_pdr && has_n_cycles == 0) || (candidate[i] &&  has_n_cycles == 0) || res[i] == 0)){
 				res[i]=it->first;
+				has_n_cycles++;
+				candidate[i] = false;
+				if(has_n_cycles > 1){
 
+					candidate[i] = true;
+
+				}
 			}
-
+		
 		}
 
-	 }
-
+	}
 	return;
 }
