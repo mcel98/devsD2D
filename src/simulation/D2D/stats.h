@@ -8,6 +8,7 @@
 #include "VTime.h"
 #include <map>
 #include <math.h>
+#include <vector>
 
 #define ATOMIC_MODEL_NAME "stats" // cambiar nombre
 
@@ -36,7 +37,9 @@ class stats: public Atomic {
 		// Distribution *dist ;
 		// Distribution &distribution()	{ return *dist; }
 		/**************************************************************************/
-        const Port &out;
+        const Port &success;
+		const Port &fail;
+		Port& out;
 	
 	
 		// [(!) declare common variables]
@@ -49,13 +52,10 @@ class stats: public Atomic {
 		// Time remaining to complete the last programmed Lifetime
 		VTime timeLeft;
 
-		float getEDR();
-		float getEDD();
+		bool type;
 
-		int packet_loss;
-        int delivered;
-        std::map<int,float> sent;
-        std::map<int,int> DutyCycleWindow;
+		double failed;
+		Tuple<Real> delivered;
 
 	
 };	// class ModelTemplate

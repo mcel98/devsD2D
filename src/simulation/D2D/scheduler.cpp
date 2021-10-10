@@ -232,8 +232,12 @@ Model &scheduler::outputFunction( const CollectMessage &msg )
 				outRelay = this->priority[static_cast<int>(this->number_of_retransmission.value())];
 
 			}
-
-			if(Real(this->maxRetransmission) >= this->number_of_retransmission){
+			if(outRelay == 0){
+				Tuple<Real> trow_info{this->relay_pdr[this->message_identifier], this->number_of_retransmission,  this->message_identifier};
+				sendOutput(msg.time(), ack, Real(0) );
+				sendOutput(msg.time(),trow, trow_info);
+			}
+			else if((Real(this->maxRetransmission) > this->number_of_retransmission)){
 			
 				if(!this->acknowledge){
 					this->number_of_retransmission = this->number_of_retransmission + Real(1);

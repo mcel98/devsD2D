@@ -5,6 +5,7 @@
 #include "transmitter.h"
 #include "cycleScheduler.h"
 #include "scheduler.h"
+#include "stats.h"
 
 void register_atomics_on(ParallelModelAdmin &admin)
 {
@@ -12,5 +13,6 @@ void register_atomics_on(ParallelModelAdmin &admin)
 	admin.registerAtomic(NewAtomicFunction< transmitter >(), "transmitter" );
 	admin.registerAtomic(NewAtomicFunction< scheduler >(), "scheduler" ); 
 	admin.registerAtomic(NewAtomicFunction<  cycleScheduler >(), " cycleScheduler" );
+	admin.registerAtomic(NewAtomicFunction<  stats >(), "stats" );
 }
 
