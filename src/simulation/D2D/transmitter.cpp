@@ -133,8 +133,8 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 
 		this->interference = res;
 
-		float power = std::pow( 10, this->transmitter_power / 10. ) / 1000;
-		float noise_W = std::pow( 10, -1.0 * this->noise / 10. ) / 1000;
+		float power = std::pow( 10.0, this->transmitter_power / 10.0 ) / 1000.0;
+		float noise_W = std::pow( 10.0, -1.0 * this->noise / 10.0 ) / 1000.0;
 		this->pdr = getPDR(this->channel_gain,this->interference,noise_W,this->path_loss_exponent,power,this->distance_to_bs,this->packet_size,this->packet_split);
 		std::cout << this->pdr << endl;
 		std::cout << "pdr: " << this->pdr << "channel gain:" << this->channel_gain << " interference: " <<this->interference << " noise: "<< this->noise<< " alpha"<<this->path_loss_exponent << endl;
