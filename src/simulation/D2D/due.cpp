@@ -39,7 +39,7 @@ timeAdvanceGenerator(0.0,1.0)
 Model &due::initFunction(){
 
 
-    double exp = -1 * log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
+    double exp = -1 * log(1-this->timeAdvanceGenerator(this->rnd)) / this->lambda;
     std::cout << exp << endl;
     double ms, sc;
     ms = std::modf(exp, &sc);
@@ -71,7 +71,7 @@ Model &due::internalFunction(const InternalMessage &msg ){
 	    PRINT_TIMES("int");
     #endif
 
-    double exp = -1 * log(this->timeAdvanceGenerator(this->rnd)) / this->lambda;
+    double exp = -1 * log(1-this->timeAdvanceGenerator(this->rnd)) / this->lambda;
     std::cout << exp << endl;
     double ms, sc; 
     ms = std::modf(exp, &sc);

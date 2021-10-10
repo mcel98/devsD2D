@@ -12,7 +12,7 @@ void register_atomics_on(ParallelModelAdmin &admin)
 	admin.registerAtomic(NewAtomicFunction< due >(), "due"); // Register custom models
 	admin.registerAtomic(NewAtomicFunction< transmitter >(), "transmitter" );
 	admin.registerAtomic(NewAtomicFunction< scheduler >(), "scheduler" ); 
-	admin.registerAtomic(NewAtomicFunction<  cycleScheduler >(), " cycleScheduler" );
+	admin.registerAtomic(NewAtomicFunction<  cycleScheduler >(), "cycleScheduler" );
 	admin.registerAtomic(NewAtomicFunction<  stats >(), "stats" );
 }
 

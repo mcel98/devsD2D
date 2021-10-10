@@ -137,7 +137,7 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 		float noise_W = std::pow( 10.0, -1.0 * this->noise / 10.0 ) / 1000.0;
 		this->pdr = getPDR(this->channel_gain,this->interference,noise_W,this->path_loss_exponent,power,this->distance_to_bs,this->packet_size,this->packet_split);
 		std::cout << this->pdr << endl;
-		std::cout << "pdr: " << this->pdr << "channel gain:" << this->channel_gain << " interference: " <<this->interference << " noise: "<< this->noise<< " alpha"<<this->path_loss_exponent << endl;
+		std::cout << "pdr: " << this->pdr << "channel gain:" << this->channel_gain << " interference: " <<this->interference << " noise: "<< noise_W << " alpha"<<this->path_loss_exponent << endl;
 		
 		
 
@@ -201,11 +201,11 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 			std::cout << "sucess" << endl;
 			Tuple<Real> hop_value{Real(this->pdr), this->retransmission, Real(relay_id)};
 			sendOutput( msg.time(), hop, hop_value);
-			Tuple<Real> control_value{Real(pdr), this->retransmission,0,Real(relay_id)};
+			Tuple<Real> control_value{Real(this->pdr), this->retransmission,0,Real(relay_id)};
 			sendOutput( msg.time(), retransmit, control_value);	
 		}else{
 			std::cout << "fail" << endl;
-			Tuple<Real> out_value{Real(pdr), this->retransmission,1,Real(relay_id)};
+			Tuple<Real> out_value{Real(this->pdr), this->retransmission,1,Real(relay_id)};
 			sendOutput( msg.time(), retransmit, out_value);
 		}
 
