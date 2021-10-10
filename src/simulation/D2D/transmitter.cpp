@@ -133,7 +133,9 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 
 		this->interference = res;
 
-		this->pdr = getPDR(this->channel_gain,this->interference,this->noise,this->path_loss_exponent,this->transmitter_power,this->distance_to_bs,this->packet_size,this->packet_split);
+		float power = std::pow( 10, this->transmitter_power / 10. ) / 1000;
+		float noise_W = std::pow( 10, -1.0 * this->noise / 10. ) / 1000;
+		this->pdr = getPDR(this->channel_gain,this->interference,noise_W,this->path_loss_exponent,power,this->distance_to_bs,this->packet_size,this->packet_split);
 		std::cout << this->pdr << endl;
 		std::cout << "pdr: " << this->pdr << "channel gain:" << this->channel_gain << " interference: " <<this->interference << " noise: "<< this->noise<< " alpha"<<this->path_loss_exponent << endl;
 		
@@ -219,11 +221,11 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 
 float transmitter::getPDR(float channel_gain,float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
 	float SINR = 0.0;
-	SINR = (transmitter_power * std::pow(distance_to_bs, path_loss_exponent) * channel_gain) / (interference + noise);
+	SINR = (transmitter_power * std::pow(distance_to_bs, -1.0 * path_loss_exponent) * channel_gain) / (interference + noise);
 
-	float pb = 0.5 * std::erfc(std::sqrt(SINR)/std::sqrt(2));
+	float pb = 0.5 * std::erfc(std::sqrt(SINR)/std::sqrt(2.0));
 	float PDR = 1.0;
-	for(int i =0; i < (packet_size / packet_split + (packet_size % packet_split != 0)); i++){
+	for(int i =0; i < ((packet_size / packet_split) + (packet_size % packet_split) ); i++){
 		PDR = std::pow((1 - pb), packet_split) * PDR;
 	}
 
