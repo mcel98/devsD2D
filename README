@@ -1,0 +1,15 @@
+Para ejecurtar el TP:
+
+1. Primero se debe copiar este archivo comprimido en el directrorio ~/SED.
+2. Depués se debe descomprimir el archivo en este directorio, quedando el árbol de
+directorios así:
+~/SED
+-----/NB-IOT
+------------/D2D
+------------/Informe
+--------------------/Informe.ipynb
+3. Ejecutar jupyter-lab en el directorio Informe, y activar el Notebook Informe.ipynb
+
+
+
+
