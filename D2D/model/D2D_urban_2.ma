@@ -108,14 +108,14 @@ lambda : 0.5
 
 [Transmitter1]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2
 noise : 50
 alpha : 3.5
-Px : 5
-device_density : 500
+Px : 1
+device_density : 5000
 
 [Transmitter2]
 r2 : 500
@@ -125,31 +125,31 @@ size : 4
 l: 2
 noise : 50
 alpha : 3.5
-Px : 5
-device_density : 500
+Px : 1
+device_density : 5000
 
 [Transmitter3]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2
 noise : 50
 alpha : 3.5
-Px : 5
-device_density : 500
+Px : 1
+device_density : 5000
 
 
 [Transmitter4]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2
 noise : 50
 alpha : 3.5
-Px : 5
-device_density : 500
+Px : 1
+device_density : 5000
 
 
 [CycleDuty1]

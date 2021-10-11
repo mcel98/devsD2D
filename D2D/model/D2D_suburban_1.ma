@@ -107,48 +107,48 @@ Link : retransmit@Transmitter4 retransmit
 lambda : 0.5
 
 [Transmitter1]
-r2 : 3500
-mu : 1.5
+r2 : 500
+mu : 1
 r : 10
 size : 4
 l: 2
-noise : 1.89
+noise : 50
 alpha : 2
-Px : 23
+Px : 13
 device_density : 0
 
 [Transmitter2]
-r2 : 3500
-mu : 1.5
+r2 : 500
+mu : 1
 r : 10
 size : 4
 l: 2
-noise : 1.89
+noise : 50
 alpha : 2
-Px : 23
+Px : 13
 device_density : 0
 
 [Transmitter3]
-r2 : 3500
-mu : 1.5
+r2 : 500
+mu : 1
 r : 10
 size : 4
 l: 2
-noise : 1.89
+noise : 50
 alpha : 2
-Px : 23
+Px : 13
 device_density : 0
 
 
 [Transmitter4]
-r2 : 3500
-mu : 1.5
+r2 : 500
+mu : 1
 r : 10
 size : 4
 l: 2
-noise : 1.89
+noise : 50
 alpha : 2
-Px : 23
+Px : 13
 device_density : 0
 
 
