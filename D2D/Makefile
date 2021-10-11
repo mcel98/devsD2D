@@ -1,4 +1,4 @@
-KERNEL_SRC       = ../../CDPP_ExtendedStates-codename-Santi/src/cd++
+KERNEL_SRC       = ../../src/cd++
 OUT_DIR          = $(shell pwd)/bin
 OBJ_DIR          = $(OUT_DIR)
 
