@@ -108,7 +108,7 @@ lambda : 0.5
 
 [Transmitter1]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2
@@ -119,7 +119,7 @@ device_density : 20
 
 [Transmitter2]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2
@@ -130,7 +130,7 @@ device_density : 20
 
 [Transmitter3]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2
@@ -142,7 +142,7 @@ device_density : 20
 
 [Transmitter4]
 r2 : 500
-mu : 1.5
+mu : 1
 r : 10
 size : 4
 l: 2

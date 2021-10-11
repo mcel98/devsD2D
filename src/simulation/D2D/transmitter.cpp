@@ -119,21 +119,20 @@ Model &transmitter::externalFunction( const ExternalMessage &msg )
 
 		std::exponential_distribution<float> expGen(this->mu);
 		std::uniform_int_distribution<int> distGen(1, this->devices_maximum_distance );
-
+		float power = std::pow( 10.0, this->transmitter_power / 10.0 ) / 1000.0;
 		for(int i = 0; i<total;i++){
-
+			
 			float h_y_b = expGen(this->rnd);
 			float r = static_cast< float >(distGen(this->rnd));
 			float alpha = this->path_loss_exponent;
 
-			res += h_y_b * std::pow(r, -1.0 * alpha) * this->transmitter_power;
+			res += h_y_b * std::pow(r, -1.0 * alpha) * power;
 			
 		}
 
 
 		this->interference = res;
 
-		float power = std::pow( 10.0, this->transmitter_power / 10.0 ) / 1000.0;
 		float noise_W = std::pow( 10.0, -1.0 * this->noise / 10.0 ) / 1000.0;
 		this->pdr = getPDR(this->channel_gain,this->interference,noise_W,this->path_loss_exponent,power,this->distance_to_bs,this->packet_size,this->packet_split);
 		std::cout << this->pdr << endl;
@@ -219,14 +218,16 @@ Model &transmitter::outputFunction( const CollectMessage &msg )
 
 }
 
-float transmitter::getPDR(float channel_gain,float interference,float noise,float path_loss_exponent,float transmitter_power,int distance_to_bs,int packet_size,int packet_split){
+float transmitter::getPDR(float gain,float inter,float noise_w,float alpha,float power,int distance,int p_size,int p_split){
 	float SINR = 0.0;
-	SINR = (transmitter_power * std::pow(distance_to_bs, -1.0 * path_loss_exponent) * channel_gain) / (interference + noise);
+	SINR = (power * std::pow(distance, -1.0 * alpha) * gain) / (inter + noise_w);
 
-	float pb = 0.5 * std::erfc(std::sqrt(SINR)/std::sqrt(2.0));
+	float pb = 0.5 * std::erfc(std::sqrt(SINR/2.0));
+	std::cout << pb << endl;
 	float PDR = 1.0;
-	for(int i =0; i < ((packet_size / packet_split) + (packet_size % packet_split) ); i++){
-		PDR = std::pow((1 - pb), packet_split) * PDR;
+	for(int i =0; i < ((p_size / p_split) + (p_size % p_split != 0) ); i++){
+		std::cout << i << endl;
+		PDR = std::pow((1 - pb), p_split) * PDR;
 	}
 
 	return PDR;
